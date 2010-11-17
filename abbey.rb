@@ -217,6 +217,15 @@ if mysql
   apply temple.join('setup/mysql.rb')
 end
 
+if haml
+  puts "Setting the template language to use haml".yellow
+  gsub_file 'config/application.rb', /g.template_engine\s{5}:erb/ do
+<<-RUBY
+g.template_engine     :haml
+RUBY
+  end
+end
+
 # ============================================================================
 # run the generators
 # ============================================================================
