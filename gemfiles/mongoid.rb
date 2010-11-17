@@ -1,7 +1,7 @@
 file 'Gemfile', <<-GEMFILE
 source 'http://rubygems.org'
 
-gem 'rails',                      '~> 3.0.2'
+gem 'rails',                      '~> 3.0.3'
 gem 'compass',                    '~> 0.10.6'
 gem 'haml',                       '~> 3.0.24'
 gem 'fancy-buttons',              '~> 0.5.5'
@@ -12,8 +12,8 @@ gem 'stateflow',                  '~> 0.2.3'
 gem 'site_meta',                  '~> 1.0.0'
 
 # Reports
-gem 'ruport',                     '~> 1.6.3'
-gem 'ruport-util',                '~> 0.14.0',    :require => 'ruport/util'
+# gem 'ruport',                     '~> 1.6.3'
+# gem 'ruport-util',                '~> 0.14.0',    :require => 'ruport/util'
 
 # gem 'hoptoad_notifier',           '~> 2.3.11'
 

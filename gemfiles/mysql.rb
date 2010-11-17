@@ -1,7 +1,7 @@
 file 'Gemfile', <<-GEMFILE
 source 'http://rubygems.org'
 
-gem 'rails',                      '~> 3.0.2'
+gem 'rails',                      '~> 3.0.3'
 gem 'mysql2',                     '~> 0.2.6'
 gem 'compass',                    '~> 0.10.6'
 gem 'haml',                       '~> 3.0.24'
