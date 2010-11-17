@@ -25,7 +25,7 @@ RUBY
 end
 
 gsub_file 'config/environments/test.rb', /# Don't care if the mailer can't send/, '# Devise Mailer Setup'
-gsub_file 'config/environments/test.rb', /# Settings specified here will take precedence over those in config/application.rb/ do
+gsub_file 'config/environments/test.rb', /# Settings specified here will take precedence over those in config\/application.rb/ do
 <<-RUBY
 config.action_mailer.default_url_options = { :host => 'localhost:3000' }
 RUBY
