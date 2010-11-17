@@ -45,93 +45,141 @@ run "mv #{javascript_install_file}/jquery_rails.js #{javascript_install_file}/ra
 # ============================================================================
 # Add a "project" for project details to the lib folder
 # ============================================================================
+gsub_file 'config/application.rb', /# Custom directories with classes and modules you want to be autoloadable\./ do
+<<-RUBY
+config.autoload_paths += %W(\#{config.root}/lib)
+RUBY
+end
+
+file 'config/build.version', '0.0.1'
+
 file 'lib/project.rb', <<-CODE
 module Project
+  self.name     = 'Project name'
+  self.domain   = 'Domain Name'
+  self.version  = Project::Version.current
+
   class Version
-    attr_reader :major, :minor, :tiny
+    class << self
+      
+      ##
+      # The location of the version number file
+      VERSION_FILE  = File.join(File.dirname(__FILE__), "..", "config", "build.version")
+      @@releases    = %w[major minor tiny].freeze
     
-    def initialize(major, minor, tiny)
-      @major = major
-      @minor = minor
-      @tiny  = tiny
-    end
     
-    def ==(version)
-      if version.is_a? Version
-        version.major == major && version.minor == minor && version.tiny == tiny
-      else
-        version.to_s == to_s
+      ##
+      # Generate build version file
+      #
+      def generate_build_file
+        File.open(VERSION_FILE, 'w') { |f| f.write '0.0.1' }
+        print "Created your build file (build.version) located at \#{VERSION_FILE.to_s}"
       end
-    end
     
-    def to_s
-      @string ||= [@major, @minor, @tiny] * '.'
-    end
+      ##
+      # Current Version
+      #
+      # Pulls the current build version 
+      #
+      def current
+        ver = (File.read(VERSION_FILE).chomp rescue 0)
+        "\#{ver}"
+      end
+ 
     
-    alias_method :inspect, :to_s
-  end
-
-  def self.[](key)
-    unless @config
-      raw_config = File.read(RAILS_ROOT + "/config/application.yml")
-      @config = YAML.load(raw_config)[RAILS_ENV].symbolize_keys
-    end
-    @config[key]
-  end
-
-  def self.[]=(key, value)
-    @config[key.to_sym] = value
-  end
-  
-  def self.domain
-    [:domain]
-  end
+      ##
+      # Verion it
+      #
+      # @param  [String, Symbol]
+      #
+      def version_it(direction, release)
+        version     = File.read(VERSION_FILE).chomp
+        int_ver     = version.split('.').join().to_i
+        new_version = case release
+        when :major then update_build_version(int_ver, direction, 100)
+        when :minor then update_build_version(int_ver, direction, 10)
+        when :point then update_build_version(int_ver, direction, 1)
+        else
+          raise ArgumentError, "You can only increase the version number by major, minor, or point."
+        end
+ 
+        File.open(VERSION_FILE, 'w') { |f| f.write new_version }
+        print "Previous Version: \#{version} - New Version: \#{new_version}" and return
+      end
     
-  def self.full_url
-    "http://#{domain}"
-  end 
-
-  class << self
-    attr_accessor :version, :project_name
+    
+      ##
+      # Method Missing
+      #
+      # @param  [String, Symbol]
+      #
+      # Project::Version.up(:point)
+      # Project::Version.down(:point)
+      # Project::Version.up(:minor)
+      # Project::Version.down(:major)
+      # 
+      #
+      def method_missing(direction, release)
+        if @@releases.include?(release.to_s.downcase)
+          version_it(direction, release)
+        else
+          super
+        end
+      end
+    
+      private
+      
+        ##
+        # Update build version
+        #
+        # @param  [Integer, Symbol, Symbol]
+        # @return [String]
+        #
+        def update_build_version(version, direction, points)
+          new_version = case direction
+          when :up    then ("%03d" % (version + points)).split(//).join('.')
+          when :down  then ("%03d" % (version - points unless version == 0)).split(//).join('.')
+          else
+            "%03d" % version
+          end
+          new_version
+        end
+    end
   end
-
-  self.version        = Version.new(0, 0, 1)
-  self.project_name   = "Project Name (update this in lib/my_app.rb)" 
-
 end
 CODE
 
 # ============================================================================
 # Use haml
 # ============================================================================
-if yes?("Would you like to use haml?")
+if haml = yes?("Would you like to use haml?")
   run 'rm app/views/layouts/application.html.erb'
   file 'app/views/layouts/application.html.haml', <<-CODE
-  !!! 5
-  %html{:xmlns =>"http://www.w3.org/1999/xhtml", "xml:lang" => I18n.locale, :lang => I18n.locale}
-    %head
+!!! 5
+%html{:xmlns =>"http://www.w3.org/1999/xhtml", "xml:lang" => I18n.locale, :lang => I18n.locale}
+  %head
 
-      = display_meta_tags :site => Project.project_name, :reverse => true
+    = display_meta_tags :site => Project.name, :reverse => true
 
-      %meta{:name => "app_version", :content => Project.version}   
-      %meta{:content => "text/html; charset=utf-8", "http-equiv" => "Content-Type"}
+    %meta{:name => "app_version", :content => Project.version}   
+    %meta{:content => "text/html; charset=utf-8", "http-equiv" => "Content-Type"}
 
-      = javascript_include_tag :all, :cache => true
+    = javascript_include_tag :all, :cache => true
 
-      = stylesheet_link_tag 'compiled/screen', :media => :screen
-      = stylesheet_link_tag 'compiled/print', :media => :print
-      /[if lt IE 8]
-        = stylesheet_link_tag 'compiled/ie', :media => :all
+    = stylesheet_link_tag 'compiled/screen', :media => :screen
+    = stylesheet_link_tag 'compiled/print', :media => :print
+    /[if lt IE 8]
+      = stylesheet_link_tag 'compiled/ie', :media => :all
 
-    %body{:id => "site-id", :class => body_class}
-      .flash
-        - flash.each do |key, value|
-          %div{:id => "flash_#{key}"}
-            =h value
-      = yield
-      %p 
-        Version:
-        = Project.version
+  %body{:id => "site-id", :class => body_class}
+    .flash
+      - flash.each do |key, value|
+        %div{:id => "flash_\#{key}"}
+          =h value
+    = yield
+    %p 
+      Version:
+      = Project.version
   CODE
 end
 

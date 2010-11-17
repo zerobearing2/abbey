@@ -18,6 +18,7 @@ gem 'site_meta',                  '~> 1.0.0'
 # gem 'hoptoad_notifier',           '~> 2.3.11'
 
 gem 'bson',                       '~> 1.1.2'
+gem 'bson_ext',                   '~> 1.1.2'
 gem 'mongo',                      '~> 1.1.2'
 gem 'mongoid',    :git => 'http://github.com/mongoid/mongoid.git',  :branch => 'master'
 
