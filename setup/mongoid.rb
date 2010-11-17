@@ -1,5 +1,5 @@
 generate('mongoid:install')
-
+generate('mongoid:config')
 
 gsub_file 'config/application.rb', /# Configure the default encoding used in templates for Ruby 1.9./ do
 <<-RUBY
