@@ -13,7 +13,7 @@ run 'rm README'
 run 'rm public/index.html'
 run 'rm public/favicon.ico'
 run 'rm public/images/rails.png'
-run 'touch README'
+run 'touch README.mk'
 
 # ============================================================================
 # Setup the gitignore file
@@ -23,6 +23,8 @@ append_file '.gitignore' do
   '.rvmrc'
   'config/database.yml'
   '.bundle-cache'
+  'gems/*'
+  'log/*.log'
   '.sass-cache/'
   'public/assets'
   'public/system'
@@ -31,13 +33,22 @@ append_file '.gitignore' do
 end
 
 # ============================================================================
+# Setup the Seeding
+# ============================================================================
+run 'mkdir -p db/seeds'
+append_file 'db/seeds.rb' do
+  "require 'colored'"
+  'Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}'
+end
+
+# ============================================================================
 # Adding jquery, jqueryui, rails.js
 # ============================================================================
 puts "Adding jQuery, jQuery UI and Rails js for jQuery.".yellow
 javascript_install_file = 'public/javascripts'
 
-Abbey::JavaScript.fetch('jquery', javascript_install_file)
-Abbey::JavaScript.fetch('jquery_ui', javascript_install_file)
+Abbey::JavaScript.fetch('jquery',       javascript_install_file)
+Abbey::JavaScript.fetch('jquery_ui',    javascript_install_file)
 Abbey::JavaScript.fetch('jquery_rails', javascript_install_file)
 
 run "mv #{javascript_install_file}/jquery_rails.js #{javascript_install_file}/rails.js"
@@ -53,29 +64,46 @@ end
 
 file 'config/build.version', '0.0.1'
 
-file 'lib/project.rb', <<-CODE
-module Project
-  self.name     = 'Project name'
-  self.domain   = 'Domain Name'
-  self.version  = Project::Version.current
+file 'lib/app.rb', <<-CODE
+require 'colored'
+module App
+  class Project
+    class << self
+    
+      def name
+        'Project Name'.yellow
+      end
+    
+      def domain
+        'Domain Name'.yellow
+      end
+    
+      def version
+        Version.current
+      end
+    
+    end
+  end
+
 
   class Version
     class << self
-      
+    
       ##
       # The location of the version number file
       VERSION_FILE  = File.join(File.dirname(__FILE__), "..", "config", "build.version")
       @@releases    = %w[major minor tiny].freeze
-    
-    
+  
+  
       ##
       # Generate build version file
       #
       def generate_build_file
         File.open(VERSION_FILE, 'w') { |f| f.write '0.0.1' }
-        print "Created your build file (build.version) located at \#{VERSION_FILE.to_s}"
+        print "Created your build file (build.version) located at #{VERSION_FILE.to_s}\n"
       end
-    
+  
+
       ##
       # Current Version
       #
@@ -83,10 +111,10 @@ module Project
       #
       def current
         ver = (File.read(VERSION_FILE).chomp rescue 0)
-        "\#{ver}"
+        "#{ver}".green
       end
- 
-    
+
+  
       ##
       # Verion it
       #
@@ -102,12 +130,12 @@ module Project
         else
           raise ArgumentError, "You can only increase the version number by major, minor, or point."
         end
- 
+
         File.open(VERSION_FILE, 'w') { |f| f.write new_version }
-        print "Previous Version: \#{version} - New Version: \#{new_version}" and return
+        print "Previous Version: #{version} - New Version: #{new_version}\n".green
       end
-    
-    
+  
+  
       ##
       # Method Missing
       #
@@ -126,9 +154,9 @@ module Project
           super
         end
       end
-    
+  
       private
-      
+    
         ##
         # Update build version
         #
@@ -183,7 +211,10 @@ if haml = yes?("Would you like to use haml?")
   CODE
 end
 
-
+# ============================================================================
+# Apply the rake tasks associated with App::Project
+# ============================================================================
+apply temple.join('tasks/version.rb')
 
 # ============================================================================
 # Git initial checking
@@ -215,6 +246,7 @@ end
 
 if mysql
   apply temple.join('setup/mysql.rb')
+  apply temple.join('tasks/reseed.rb')
 end
 
 if haml
@@ -272,8 +304,8 @@ run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/sty
 # ============================================================================
 # final git checkin
 # ============================================================================
-puts "Checking our changes into git.".yellow
+puts "Checking our changes into git.".green
 git :add    => '.'
 git :commit => "-am 'first commit!'"
 
-puts "Abbey has setup everything for you.".yellow
+puts "Abbey has setup everything for you.".green
