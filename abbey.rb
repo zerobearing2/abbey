@@ -298,8 +298,7 @@ gsub_file 'config/routes.rb', /get \"home\/index\"/, 'root :to => "home#index"'
 # Run the compass init
 # ============================================================================
 puts "Installing compass".yellow
-run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass'
-
+run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass -r html5-boilerplate -u html5-boilerplate --force'
 
 # ============================================================================
 # final git checkin
