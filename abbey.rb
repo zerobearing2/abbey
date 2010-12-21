@@ -6,6 +6,10 @@ temple = Pathname.new(File.expand_path(File.dirname(__FILE__)))
 # Require our helpers
 require temple.join('helpers/javascripts.rb')
 
+# Check to see if mysql is being used.
+@mysql_in_use   = true if File.exists?(File.join(Dir.pwd, 'config/database.yml'))
+@jquery_in_use  = true if !File.exists?(File.join(Dir.pwd, 'public/javascripts/prototype.js'))
+
 # ============================================================================
 # Remove unnecessary files
 # ============================================================================
@@ -13,7 +17,9 @@ run 'rm README'
 run 'rm public/index.html'
 run 'rm public/favicon.ico'
 run 'rm public/images/rails.png'
-run 'touch README.mk'
+run 'mv config/database.yml config/datbase.yml.example' if @mysql_in_use
+run 'touch README.mkd'
+run 'mkdir -p app/views/layout_partials'
 
 # ============================================================================
 # Setup the gitignore file
@@ -37,21 +43,35 @@ end
 # ============================================================================
 run 'mkdir -p db/seeds'
 append_file 'db/seeds.rb' do
-  "require 'colored'"
+  'require "colored"'
   'Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}'
 end
 
 # ============================================================================
+# Setup the application helper
+# ============================================================================
+run 'rm app/helpers/application_helper.rb'
+apply temple.join('app/helpers/application_helper.rb')
+
+# ============================================================================
 # Adding jquery, jqueryui, rails.js
 # ============================================================================
-puts "Adding jQuery, jQuery UI and Rails js for jQuery.".yellow
-javascript_install_file = 'public/javascripts'
+if @jquery_in_use
+  puts "Adding jQuery, jQuery UI and Rails js for jQuery.".yellow
+  javascript_install_file = 'public/javascripts'
 
-Abbey::JavaScript.fetch('jquery',       javascript_install_file)
-Abbey::JavaScript.fetch('jquery_ui',    javascript_install_file)
-Abbey::JavaScript.fetch('jquery_rails', javascript_install_file)
+  Abbey::JavaScript.fetch('jquery',       javascript_install_file)
+  Abbey::JavaScript.fetch('jquery_ui',    javascript_install_file)
+  Abbey::JavaScript.fetch('jquery_rails', javascript_install_file)
 
-run "mv #{javascript_install_file}/jquery_rails.js #{javascript_install_file}/rails.js"
+  run "mv #{javascript_install_file}/jquery_rails.js #{javascript_install_file}/rails.js"
+  
+  puts "Adding jquery, jquery-ui and rails to the js defaults.".yellow
+  gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
+end
+
+puts "Installing Modernizr".yellow.bold
+Abbey::JavaScript.fetch('modernizr', javascript_install_file)
 
 # ============================================================================
 # Add a "project" for project details to the lib folder
@@ -100,7 +120,7 @@ module App
       #
       def generate_build_file
         File.open(VERSION_FILE, 'w') { |f| f.write '0.0.1' }
-        print "Created your build file (build.version) located at #{VERSION_FILE.to_s}\n"
+        print "Created your build file (build.version) located at \#{VERSION_FILE.to_s}\n"
       end
   
 
@@ -111,7 +131,7 @@ module App
       #
       def current
         ver = (File.read(VERSION_FILE).chomp rescue 0)
-        "#{ver}".green
+        "\#{ver}".green
       end
 
   
@@ -132,7 +152,7 @@ module App
         end
 
         File.open(VERSION_FILE, 'w') { |f| f.write new_version }
-        print "Previous Version: #{version} - New Version: #{new_version}\n".green
+        print "Previous Version: \#{version} - New Version: \#{new_version}\n".green
       end
   
   
@@ -178,9 +198,75 @@ end
 CODE
 
 # ============================================================================
+# Apply the rake tasks associated with App::Project
+# ============================================================================
+apply temple.join('tasks/version.rb')
+
+# ============================================================================
+# Git initial checking
+# ============================================================================
+puts "checking everything into git...".yellow
+git :init
+git :add => '.'
+git :commit => "-am 'Initial commit of a clean rails application.'"
+
+# ============================================================================
+# Setup for specific database
+# ============================================================================
+run 'rm Gemfile'
+
+
+if @mysql_in_use
+  puts "Running some setup tasks for MySQL.".green.bold
+  apply temple.join('gemfiles/mysql.rb')
+  apply temple.join('setup/mysql.rb')
+  apply temple.join('tasks/reseed.rb')
+else
+  if mongoid = yes?('Use mongodb?')
+    puts "Running some setup tasks for MongoDB.".green.bold
+    apply temple.join('gemfiles/mongoid.rb')
+    apply temple.join('setup/mongoid.rb')
+  end
+end
+
+# Run the bundler installer
+run 'bundle install'
+
+# ============================================================================
+# run the generators
+# ============================================================================
+puts "Running some generators (steak, rspec, simple_form, devise)".yellow
+generate('steak:install')
+generate('rspec:install')
+generate('simple_form:install')
+generate('devise:install')
+generate('devise:views')
+
+
+# ============================================================================
+# setup devise mailer for dev/test/prod
+# ============================================================================
+puts "Setting up Devise Mailer".yellow
+apply temple.join('setup/devise_mailer.rb')
+
+
+# ============================================================================
+# Modify config/application.rb file
+# ============================================================================
+puts "Prevent logging of passwords".yellow
+gsub_file 'config/application.rb', /:password/, ':password, :password_confirmation'
+
+# ============================================================================
 # Use haml
 # ============================================================================
 if haml = yes?("Would you like to use haml?")
+  puts "Setting the template language to use haml".yellow
+  gsub_file 'config/application.rb', /g.template_engine\s{5}:erb/ do
+<<-RUBY
+g.template_engine     :haml
+RUBY
+  end
+  
   run 'rm app/views/layouts/application.html.erb'
   file 'app/views/layouts/application.html.haml', <<-CODE
 !!! 5
@@ -209,81 +295,10 @@ if haml = yes?("Would you like to use haml?")
       Version:
       = Project.version
   CODE
+else
+  apply temple.join('layouts/application.rb')
+  apply temple.join('layouts/include_javascripts.rb')
 end
-
-# ============================================================================
-# Apply the rake tasks associated with App::Project
-# ============================================================================
-apply temple.join('tasks/version.rb')
-
-# ============================================================================
-# Git initial checking
-# ============================================================================
-puts "checking everything into git...".yellow
-git :init
-git :add => '.'
-git :commit => "-am 'Initial commit of a clean rails application.'"
-
-# ============================================================================
-# Add the appropriate gemfile
-# ============================================================================
-run 'rm Gemfile'
-
-if mongoid = yes?('Use mongodb?')
-  apply temple.join('gemfiles/mongoid.rb')
-elsif mysql = yes?('Use mysql?')
-  apply temple.join('gemfiles/mysql.rb')
-end
-
-run 'bundle install'
-
-# ============================================================================
-# setup for the database that is being used
-# ============================================================================
-if mongoid
-  apply temple.join('setup/mongoid.rb')
-end
-
-if mysql
-  apply temple.join('setup/mysql.rb')
-  apply temple.join('tasks/reseed.rb')
-end
-
-if haml
-  puts "Setting the template language to use haml".yellow
-  gsub_file 'config/application.rb', /g.template_engine\s{5}:erb/ do
-<<-RUBY
-g.template_engine     :haml
-RUBY
-  end
-end
-
-# ============================================================================
-# run the generators
-# ============================================================================
-puts "Running some generators (steak, rspec, simple_form, devise)".yellow
-generate('steak:install')
-generate('rspec:install')
-generate('simple_form:install')
-generate('devise:install')
-generate('devise:views')
-
-
-# ============================================================================
-# setup devise mailer for dev/test/prod
-# ============================================================================
-puts "Setting up Devise Mailer".yellow
-apply temple.join('setup/devise_mailer.rb')
-
-
-# ============================================================================
-# Modify config/application.rb file
-# ============================================================================
-puts "Prevent logging of passwords".yellow
-gsub_file 'config/application.rb', /:password/, ':password, :password_confirmation'
-
-puts "Adding jquery, jquery-ui and rails to the js defaults.".yellow
-gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
 
 
 # ============================================================================
@@ -298,7 +313,7 @@ gsub_file 'config/routes.rb', /get \"home\/index\"/, 'root :to => "home#index"'
 # Run the compass init
 # ============================================================================
 puts "Installing compass".yellow
-run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass -r html5-boilerplate -u html5-boilerplate --force'
+run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass'
 
 # ============================================================================
 # final git checkin

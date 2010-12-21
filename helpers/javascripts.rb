@@ -13,7 +13,7 @@ module Abbey
       SCRIPTACULOUS_VERSION = '1'
       MOOTOOLS_VERSION      = '1'
     
-      JAVASCRIPT_FRAMEWORKS = %w(jquery jquery-ui mootools prototype scriptaculous jquery-rails)
+      JAVASCRIPT_FRAMEWORKS = %w(jquery jquery-ui mootools prototype scriptaculous jquery-rails modernizr)
     
       def fetch(framework, download_path)
         filename      = javascript_filename(framework, download_path)
@@ -61,6 +61,10 @@ module Abbey
       
       def jquery_rails_url
         "https://github.com/rails/jquery-ujs/raw/master/src/rails.js"
+      end
+      
+      def modernizr_url
+        "https://github.com/Modernizr/Modernizr/raw/master/modernizr.js"
       end
     end
   end

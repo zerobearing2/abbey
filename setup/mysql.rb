@@ -1,5 +1,4 @@
 run 'cp config/database.yml config/database.yml.example'
-apply temple.join('tasks/reseed.rb')
 
 gsub_file 'config/application.rb', /# Configure the default encoding used in templates for Ruby 1.9./ do
 <<-RUBY
