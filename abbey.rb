@@ -74,7 +74,7 @@ puts "Installing Modernizr".yellow.bold
 Abbey::JavaScript.fetch('modernizr', javascript_install_file)
 
 # ============================================================================
-# Add a "project" for project details to the lib folder
+# Add the app module for project details to the lib folder
 # ============================================================================
 gsub_file 'config/application.rb', /# Custom directories with classes and modules you want to be autoloadable\./ do
 <<-RUBY
@@ -135,6 +135,7 @@ module App
         "\#{ver}".green
       end
       
+      
       # Read the Build File
       def read_build_file
         (File.read(VERSION_FILE).chomp rescue 0)
@@ -166,11 +167,14 @@ module App
       # Method Missing for capturing the Version.up and Version.down
       def method_missing(direction, release)
         raise VersionError.new("You can only version up or down.") unless ['up', 'down'].include?(direction)
+        
+        # if major/minor/point is requested
         if @@releases.include?(release.to_s.downcase)
           versioning(direction, release)
         else
           super
         end
+        
       end
   
   
@@ -178,12 +182,22 @@ module App
     
         # Does the actual updating of the version numbers
         def update_build_version(version, direction, points)
+          
+          # what direction is being requested
           new_version = case direction
+          
+          # add version points to the current version
           when :up    then ("%03d" % (version + points)).split(//).join('.')
+            
+          # minus version points from the current version
           when :down  then ("%03d" % (version - points unless version == 0)).split(//).join('.')
+          
           else
+            
+            # the current version
             "%03d" % version
           end
+          
           new_version
         end
     end
