@@ -104,45 +104,49 @@ module App
     
     end
   end
-
+  
+  class VersionError < StandardError; end
 
   class Version
     class << self
     
       ##
       # The location of the version number file
-      VERSION_FILE  = File.join(File.dirname(__FILE__), "..", "config", "build.version")
-      @@releases    = %w[major minor tiny].freeze
+      VERSION_CONFIG  = File.expand_path(File.join(File.dirname(__FILE__), "..", "config"))
+      VERSION_FILE    = File.expand_path(File.join(VERSION_CONFIG, "build.version"))
+      @@releases      = %w[major minor point].freeze
   
   
-      ##
-      # Generate build version file
-      #
+      # Generate a build.version file to the config/ directory of a rails application.
       def generate_build_file
+        
+        # create the config directory if it doesn't already exist
+        FileUtils.mkdir_p(VERSION_CONFIG) unless File.exists?(VERSION_CONFIG)
+        
+        # create the build.version file and add the first version, 0.0.1
         File.open(VERSION_FILE, 'w') { |f| f.write '0.0.1' }
-        print "Created your build file (build.version) located at \#{VERSION_FILE.to_s}\n"
+        print "Created a build version file (build.version) located at \#{VERSION_FILE.to_s}\n"
       end
   
 
-      ##
-      # Current Version
-      #
-      # Pulls the current build version 
-      #
+      # Return the current version number from the build version file.
       def current
-        ver = (File.read(VERSION_FILE).chomp rescue 0)
+        ver = read_build_file
         "\#{ver}".green
       end
+      
+      # Read the Build File
+      def read_build_file
+        (File.read(VERSION_FILE).chomp rescue 0)
+      end
 
   
-      ##
-      # Verion it
-      #
-      # @param  [String, Symbol]
-      #
-      def version_it(direction, release)
-        version     = File.read(VERSION_FILE).chomp
+      # Verison up or down for major, minor, and point releases
+      def versioning(direction, release)
+        version     = read_build_file
         int_ver     = version.split('.').join().to_i
+        
+        # case to determine versioning release
         new_version = case release
         when :major then update_build_version(int_ver, direction, 100)
         when :minor then update_build_version(int_ver, direction, 10)
@@ -150,39 +154,29 @@ module App
         else
           raise ArgumentError, "You can only increase the version number by major, minor, or point."
         end
-
+        
+        # save the version number to the build version file
         File.open(VERSION_FILE, 'w') { |f| f.write new_version }
+        
+        # give the user a message that it has completed and show the previous/current version.
         print "Previous Version: \#{version} - New Version: \#{new_version}\n".green
       end
   
   
-      ##
-      # Method Missing
-      #
-      # @param  [String, Symbol]
-      #
-      # Project::Version.up(:point)
-      # Project::Version.down(:point)
-      # Project::Version.up(:minor)
-      # Project::Version.down(:major)
-      # 
-      #
+      # Method Missing for capturing the Version.up and Version.down
       def method_missing(direction, release)
+        raise VersionError.new("You can only version up or down.") unless ['up', 'down'].include?(direction)
         if @@releases.include?(release.to_s.downcase)
-          version_it(direction, release)
+          versioning(direction, release)
         else
           super
         end
       end
   
+  
       private
     
-        ##
-        # Update build version
-        #
-        # @param  [Integer, Symbol, Symbol]
-        # @return [String]
-        #
+        # Does the actual updating of the version numbers
         def update_build_version(version, direction, points)
           new_version = case direction
           when :up    then ("%03d" % (version + points)).split(//).join('.')
