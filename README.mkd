@@ -15,7 +15,7 @@ TODO: Directory structure needs a refactor.
         echo " Does not include Prototype or Test Unit."
         echo " Runs the abbey template."
         echo 
-        echo " rails new $@ -T --template=/Users/revans/Development/cw/open_source/abbey/abbey.rb"
+        echo " rails new $@ --template=/Users/revans/Development/cw/open_source/abbey/abbey.rb"
         echo
         echo "**** Abbey usage ****"
         echo " abbey application_name -d=mysql -O"
@@ -25,6 +25,6 @@ TODO: Directory structure needs a refactor.
         echo
       else
       
-        rails new $@ -T --template=/Users/revans/Development/cw/open_source/abbey/abbey.rb
+        rails new $@ --template=/Users/revans/Development/cw/open_source/abbey/abbey.rb
       fi
     }
