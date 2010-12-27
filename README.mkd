@@ -11,14 +11,12 @@ TODO: Directory structure needs a refactor.
       then
         echo
         echo "**** Abbey defaults ****"
-        echo " Runs the rails new command, taking up to 3 arguments."
-        echo " Does not include Prototype or Test Unit."
-        echo " Runs the abbey template."
+        echo " Runs the rails new command using the Abbey template."
         echo 
         echo " rails new $@ --template=/Users/revans/Development/cw/open_source/abbey/abbey.rb"
         echo
         echo "**** Abbey usage ****"
-        echo " abbey application_name -d=mysql -O"
+        echo " abbey application_name -d=mysql -O -T"
         echo " abbey application_name -d=mysql"
         echo " abbey application_name -O"
         echo " abbey application_name"
