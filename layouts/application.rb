@@ -19,7 +19,7 @@ file 'app/views/layouts/application.html.erb', <<-CODE
   
   <script src="/javascripts/modernizr.js"></script>
 
-  <title><%= head_title('Page Title') %></title>
+  <%= head_title('Page Title') %>
 
 </head>
 <!--[if lt IE 7 ]> <body class="ie6 <%= body_classes %>"> <![endif]-->
