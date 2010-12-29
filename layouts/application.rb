@@ -12,14 +12,14 @@ file 'app/views/layouts/application.html.erb', <<-CODE
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   
-  <%= stylesheet_link_tag 'compiled/screen', 'compiled/print' %>
+  <%= stylesheet_link_tag 'screen', 'print' %>
   <%= javascript_include_tag :defaults %>
   <%= csrf_meta_tag %>
   
   
   <script src="/javascripts/modernizr.js"></script>
 
-  <title><%= page_title || 'Page Title' %></title>
+  <title><%= head_title('Page Title') %></title>
 
 </head>
 <!--[if lt IE 7 ]> <body class="ie6 <%= body_classes %>"> <![endif]-->
@@ -32,7 +32,7 @@ file 'app/views/layouts/application.html.erb', <<-CODE
       <%= yield %>
     </div>
     
-    <%= render :partial => 'layouts/include_javascripts' %>
+    <%= render :partial => 'layout_partials/include_javascripts' %>
   </body>
 </html>
 CODE

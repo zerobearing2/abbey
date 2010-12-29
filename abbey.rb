@@ -125,7 +125,7 @@ module App
         
         # create the build.version file and add the first version, 0.0.1
         File.open(VERSION_FILE, 'w') { |f| f.write '0.0.1' }
-        print "Created a build version file (build.version) located at \#{VERSION_FILE.to_s}\n"
+        print "Created a build version file (build.version) located at \#{VERSION_FILE.to_s}"
       end
   
 
@@ -160,7 +160,7 @@ module App
         File.open(VERSION_FILE, 'w') { |f| f.write new_version }
         
         # give the user a message that it has completed and show the previous/current version.
-        print "Previous Version: \#{version} - New Version: \#{new_version}\n".green
+        print "Previous Version: \#{version} - New Version: \#{new_version}".green
       end
   
   
@@ -227,18 +227,18 @@ run 'rm Gemfile'
 if @mysql_in_use
   puts "Running some setup tasks for MySQL.".green.bold
   apply temple.join('gemfiles/mysql.rb')
+  run 'bundle install'
   apply temple.join('setup/mysql.rb')
   apply temple.join('tasks/reseed.rb')
 else
   if mongoid = yes?('Use mongodb?')
     puts "Running some setup tasks for MongoDB.".green.bold
     apply temple.join('gemfiles/mongoid.rb')
+    run 'bundle install'
     apply temple.join('setup/mongoid.rb')
   end
 end
 
-# Run the bundler installer
-run 'bundle install'
 
 # ============================================================================
 # run the generators
