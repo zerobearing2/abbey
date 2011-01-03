@@ -17,7 +17,7 @@ run 'rm README'
 run 'rm public/index.html'
 run 'rm public/favicon.ico'
 run 'rm public/images/rails.png'
-run 'mv config/database.yml config/datbase.yml.example' if @mysql_in_use
+run 'cp config/database.yml config/datbase.yml.example' if @mysql_in_use
 run 'touch README.mkd'
 run 'mkdir -p app/views/layout_partials'
 
