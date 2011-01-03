@@ -56,9 +56,9 @@ apply temple.join('app/helpers/application_helper.rb')
 # ============================================================================
 # Adding jquery, jqueryui, rails.js
 # ============================================================================
+javascript_install_file = 'public/javascripts'
 if @jquery_in_use
   puts "Adding jQuery, jQuery UI and Rails js for jQuery.".yellow
-  javascript_install_file = 'public/javascripts'
 
   Abbey::JavaScript.fetch('jquery',       javascript_install_file)
   Abbey::JavaScript.fetch('jquery_ui',    javascript_install_file)
