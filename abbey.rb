@@ -6,6 +6,7 @@ temple = Pathname.new(File.expand_path(File.dirname(__FILE__)))
 # Require our helpers
 require temple.join('helpers/javascripts.rb')
 
+
 # Check to see if mysql is being used.
 @mysql_in_use   = true if File.exists?(File.join(Dir.pwd, 'config/database.yml'))
 @jquery_in_use  = true if !File.exists?(File.join(Dir.pwd, 'public/javascripts/prototype.js'))
@@ -43,7 +44,7 @@ end
 # ============================================================================
 run 'mkdir -p db/seeds'
 append_file 'db/seeds.rb' do
-  'require "colored"'
+  "require 'colored'"
   'Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}'
 end
 
@@ -91,11 +92,11 @@ module App
     class << self
     
       def name
-        'Project Name'.yellow
+        'Project Name'
       end
     
       def domain
-        'Domain Name'.yellow
+        'Domain Name'
       end
     
       def version
@@ -246,9 +247,14 @@ end
 puts "Running some generators (steak, rspec, simple_form, devise)".yellow
 generate('steak:install')
 generate('rspec:install')
-generate('simple_form:install')
 generate('devise:install')
 generate('devise:views')
+
+if yes?("Would you like to use Simple Form?")
+  generate('simple_form:install')
+else
+  puts "Remember to delete simple form from the Gemfile.".red.bold
+end
 
 
 # ============================================================================
@@ -267,6 +273,8 @@ gsub_file 'config/application.rb', /:password/, ':password, :password_confirmati
 # ============================================================================
 # Use haml
 # ============================================================================
+run 'rm app/views/layouts/application.html.erb'
+
 if haml = yes?("Would you like to use haml?")
   puts "Setting the template language to use haml".yellow
   gsub_file 'config/application.rb', /g.template_engine\s{5}:erb/ do
@@ -275,13 +283,11 @@ g.template_engine     :haml
 RUBY
   end
   
-  run 'rm app/views/layouts/application.html.erb'
+  # TODO: move to another file
   file 'app/views/layouts/application.html.haml', <<-CODE
 !!! 5
 %html{:xmlns =>"http://www.w3.org/1999/xhtml", "xml:lang" => I18n.locale, :lang => I18n.locale}
   %head
-
-    = display_meta_tags :site => Project.name, :reverse => true
 
     %meta{:name => "app_version", :content => Project.version}   
     %meta{:content => "text/html; charset=utf-8", "http-equiv" => "Content-Type"}
@@ -293,7 +299,7 @@ RUBY
     /[if lt IE 8]
       = stylesheet_link_tag 'compiled/ie', :media => :all
 
-  %body{:id => "site-id", :class => body_class}
+  %body{:id => "site-id", :class => body_classes}
     .flash
       - flash.each do |key, value|
         %div{:id => "flash_\#{key}"}
@@ -312,22 +318,42 @@ end
 # ============================================================================
 # Generate a home controller with an index action
 # ============================================================================
-puts "Generating a Home controller with an index action. Adding it as the root_url.".yellow
-generate(:controller, "home index")
-gsub_file 'config/routes.rb', /get \"home\/index\"/, 'root :to => "home#index"'
+if yes?("Would you like to generate a home controller?")
+  puts "Generating a Home controller with an index action. Adding it as the root_url.".yellow
+  generate(:controller, "home index")
+  gsub_file 'config/routes.rb', /get \"home\/index\"/, 'root :to => "home#index"'
+end
 
+if yes?("Would you like to generate a devise user?")
+  run "rails generate devise user"
+end
 
 # ============================================================================
 # Run the compass init
 # ============================================================================
-puts "Installing compass".yellow
-run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass'
+if yes?("Would you like to use Compass?")
+  puts "Installing compass".yellow
+  run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass'
+end
+
+# ============================================================================
+# Create some Models
+# ============================================================================
+if yes?("Would you like to generate some models to get started?")
+  models = ask("What are the model names? (e.g. separate them by commas: account, user, contact)")
+  models.split(',').each do |model|
+    model.strip!
+    puts "Generating #{model} model".yellow.bold
+    generate("model #{model}")
+  end
+end
+
 
 # ============================================================================
 # final git checkin
 # ============================================================================
 puts "Checking our changes into git.".green
 git :add    => '.'
-git :commit => "-am 'first commit!'"
+git :commit => "-am 'Abbey applied her configuration.'"
 
 puts "Abbey has setup everything for you.".green
