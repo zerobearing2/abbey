@@ -1,78 +1,98 @@
 require 'pathname'
-require "colored"
+require 'colored'
 
-temple = Pathname.new(File.expand_path(File.dirname(__FILE__)))
+def attention(text)
+  $stdout.puts(text.to_s.green.bold.rjust(10))
+end
 
-# Require our helpers
-require temple.join('helpers/javascripts.rb')
+@add_to_bundler = []
+def after_bundler
+  @add_to_bundler << block
+end
 
+temple  = Pathname.new(File.expand_path(File.dirname(__FILE__)))
+app     = Pathname.new(File.expand_path(Dir.pwd))
 
-# Check to see if mysql is being used.
-@mysql_in_use   = true if File.exists?(File.join(Dir.pwd, 'config/database.yml'))
-@jquery_in_use  = true if !File.exists?(File.join(Dir.pwd, 'public/javascripts/prototype.js'))
+mysql?      = File.exists?(File.join(app, 'config/database.yml'))
+prototype?  = File.exists?(File.join(app, 'public/javascripts/prototype.js'))
+
+mongodb     = yes?('Would you like to use MongoDB?')
 
 # ============================================================================
 # Remove unnecessary files
 # ============================================================================
-run 'rm README'
-run 'rm public/index.html'
-run 'rm public/favicon.ico'
-run 'rm public/images/rails.png'
-run 'cp config/database.yml config/datbase.yml.example' if @mysql_in_use
-run 'touch README.mkd'
-run 'mkdir -p app/views/layout_partials'
+files = ['README', 'public/index.html', 'public/favicon.ico', 
+         'public/images/rails.png']
+file.each { |f| run "rm #{f}" }
+attention "Removed unneccessary files."
+
+# ============================================================================
+# Create and move
+# ============================================================================
+run "cp config/database.yml config/database.yml.example" if mysql?
+run "touch Readme.mkd"
+run "mkdir -p app/views/shared"
+
+attention "Recreated the readme file using markdown."
+attention "Created app/views/shared directory"
 
 # ============================================================================
 # Setup the gitignore file
 # ============================================================================
-append_file '.gitignore' do
-  '.DS_Store'
-  '.rvmrc'
-  'config/database.yml'
-  '.bundle-cache'
-  'gems/*'
-  'log/*.log'
-  '.sass-cache/'
-  'public/assets'
-  'public/system'
-  'public/uploads'
-  'coverage/*'
-end
+file '.gitignore', <<-FILE
+.DS_Store
+log/*.log
+tmp/**/*
+config/database.yml
+db/*.sqlite3
+public/uploads/*
+gems/*
+!gems/cache
+!gems/bundler
+.rvmrc
+public/assets
+public/system
+coverage/*
+.sass-cache
+.bundle-cache
+FILE
+
+attention "Updated the gitignore file."
 
 # ============================================================================
-# Setup the Seeding
+# Adding the seed system
 # ============================================================================
 run 'mkdir -p db/seeds'
-append_file 'db/seeds.rb' do
-  "require 'colored'"
-  'Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}'
-end
+file 'db/seeds.rb', <<-RUBY
+require 'colored'
+Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}
+RUBY
+
+attention "Setup the seed system."
 
 # ============================================================================
-# Setup the application helper
+# Install jQuery
 # ============================================================================
-run 'rm app/helpers/application_helper.rb'
-apply temple.join('app/helpers/application_helper.rb')
-
-# ============================================================================
-# Adding jquery, jqueryui, rails.js
-# ============================================================================
-javascript_install_file = 'public/javascripts'
-if @jquery_in_use
-  puts "Adding jQuery, jQuery UI and Rails js for jQuery.".yellow
-
-  Abbey::JavaScript.fetch('jquery',       javascript_install_file)
-  Abbey::JavaScript.fetch('jquery_ui',    javascript_install_file)
-  Abbey::JavaScript.fetch('jquery_rails', javascript_install_file)
-
-  run "mv #{javascript_install_file}/jquery_rails.js #{javascript_install_file}/rails.js"
-  
-  puts "Adding jquery, jquery-ui and rails to the js defaults.".yellow
+if jquery?
+  inside "public/javascripts" do
+    get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js", "rails.js"
+    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js", "jquery/jquery.js" 
+    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery-ui.min.js", "jquery/jquery_ui.js"  
+    attention "Added jquery, jquery ui, and rails-jquery to the project."
+  end
   gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
+  attention "Updated config/application to autoload jquery, jquery ui, and rails-jquery."
 end
 
-puts "Installing Modernizr".yellow.bold
-Abbey::JavaScript.fetch('modernizr', javascript_install_file)
+
+# ============================================================================
+# Install Modernizr
+# ============================================================================
+inside "public/javascripts" do 
+  get "https://github.com/Modernizr/Modernizr/raw/master/modernizr.js", "modernizr.js"
+  attention "Added modernizr to the project."
+end
+
 
 # ============================================================================
 # Add the app module for project details to the lib folder
@@ -83,7 +103,10 @@ config.autoload_paths += %W(\#{config.root}/lib)
 RUBY
 end
 
+attention "Updated the config.autoload_paths to include the /lib directory."
+
 file 'config/build.version', '0.0.1'
+attention "Created config/build.version with version 0.0.1 for application version control."
 
 file 'lib/app.rb', <<-CODE
 require 'colored'
@@ -206,154 +229,265 @@ module App
 end
 CODE
 
+attention "Added lib/app.rb for project name, domain and versioning control."
+
 # ============================================================================
 # Apply the rake tasks associated with App::Project
 # ============================================================================
-apply temple.join('tasks/version.rb')
+file 'lib/tasks/version.rake', <<-CODE
+namespace :project do
+  desc "Get the project's version number"
+  task :version => :environment do
+    puts "\#{App::Project.name}'s version: \#{App::Project.version}."
+  end
+  
+  task :name => :environment do
+    puts "Project name: \#{App::Project.name}"
+  end
+  
+  task :domain => :environment do
+    puts "Project's domain name: \#{App::Project.domain}"
+  end
+end
+
+namespace :version do
+  desc 'Point Release'
+  task :point_release => :environment do
+    App::Version.version_it(:up, :point)
+  end
+  
+  desc 'Minor Release'
+  task :minor_release => :environment do
+    App::Version.version_it(:up, :minor)
+  end
+  
+  desc 'Major Release'
+  task :major_release => :environment do
+    App::Version.version_it(:up, :major)
+  end
+  
+  
+  # Downgrade version
+  namespace :down do
+    
+    desc 'Downgrade Point Release'
+    task :point_release => :environment do
+      App::Version.version_it(:down, :point)
+    end
+  
+    desc 'Downgrade Minor Release'
+    task :minor_release => :environment do
+      App::Version.version_it(:down, :minor)
+    end
+  
+    desc 'Downgrade Major Release'
+    task :major_release => :environment do
+      App::Version.version_it(:down, :major)
+    end
+  end
+end  
+CODE
+
+attention "Added rake tasks to easily use the app.rb project management script."
 
 # ============================================================================
 # Git initial checking
 # ============================================================================
-puts "checking everything into git...".yellow
+attention "Checking everything into git."
 git :init
 git :add => '.'
 git :commit => "-am 'Initial commit of a clean rails application.'"
 
 # ============================================================================
-# Setup for specific database
+# Generators
 # ============================================================================
-run 'rm Gemfile'
-
-
-if @mysql_in_use
-  puts "Running some setup tasks for MySQL.".green.bold
-  apply temple.join('gemfiles/mysql.rb')
-  run 'bundle install'
-  apply temple.join('setup/mysql.rb')
-  apply temple.join('tasks/reseed.rb')
-else
-  if mongoid = yes?('Use mongodb?')
-    puts "Running some setup tasks for MongoDB.".green.bold
-    apply temple.join('gemfiles/mongoid.rb')
-    run 'bundle install'
-    apply temple.join('setup/mongoid.rb')
-  end
+initializer 'generators.rb', <<-RUBY
+Rails.application.config.generators do |g|
 end
-
-
-# ============================================================================
-# run the generators
-# ============================================================================
-puts "Running some generators (steak, rspec, simple_form, devise)".yellow
-generate('steak:install')
-generate('rspec:install')
-generate('devise:install')
-generate('devise:views')
-
-if yes?("Would you like to use Simple Form?")
-  generate('simple_form:install')
-else
-  puts "Remember to delete simple form from the Gemfile.".red.bold
-end
-
-
-# ============================================================================
-# setup devise mailer for dev/test/prod
-# ============================================================================
-puts "Setting up Devise Mailer".yellow
-apply temple.join('setup/devise_mailer.rb')
-
-
-# ============================================================================
-# Modify config/application.rb file
-# ============================================================================
-puts "Prevent logging of passwords".yellow
-gsub_file 'config/application.rb', /:password/, ':password, :password_confirmation'
-
-# ============================================================================
-# Use haml
-# ============================================================================
-run 'rm app/views/layouts/application.html.erb'
-
-if haml = yes?("Would you like to use haml?")
-  puts "Setting the template language to use haml".yellow
-  gsub_file 'config/application.rb', /g.template_engine\s{5}:erb/ do
-<<-RUBY
-g.template_engine     :haml
 RUBY
-  end
-  
-  # TODO: move to another file
-  file 'app/views/layouts/application.html.haml', <<-CODE
-!!! 5
-%html{:xmlns =>"http://www.w3.org/1999/xhtml", "xml:lang" => I18n.locale, :lang => I18n.locale}
-  %head
 
-    %meta{:name => "app_version", :content => Project.version}   
-    %meta{:content => "text/html; charset=utf-8", "http-equiv" => "Content-Type"}
+# ============================================================================
+# Rspec
+# ============================================================================
+attention 'Setting up rspec.'
 
-    = javascript_include_tag :all, :cache => true
+gem 'rspec-rails',  :group => [:development, :test]
 
-    = stylesheet_link_tag 'compiled/screen', :media => :screen
-    = stylesheet_link_tag 'compiled/print', :media => :print
-    /[if lt IE 8]
-      = stylesheet_link_tag 'compiled/ie', :media => :all
-
-  %body{:id => "site-id", :class => body_classes}
-    .flash
-      - flash.each do |key, value|
-        %div{:id => "flash_\#{key}"}
-          =h value
-    = yield
-    %p 
-      Version:
-      = Project.version
-  CODE
-else
-  apply temple.join('layouts/application.rb')
-  apply temple.join('layouts/include_javascripts.rb')
+attention 'Setting up the config/initializers/generator.rb file.'
+inject_into_file "config/initializers/generators.rb", :after => "Rails.application.config.generators do |g|\n" do
+  "    g.test_framework   :rspec, :fixture => true, :views => false\n"
+  "    g.stylesheets      false"
+  "    g.template_engine  :erb"
 end
 
+after_bundler { generate 'rspec:install' }
+
 
 # ============================================================================
-# Generate a home controller with an index action
+# Steak
 # ============================================================================
-if yes?("Would you like to generate a home controller?")
-  puts "Generating a Home controller with an index action. Adding it as the root_url.".yellow
-  generate(:controller, "home index")
-  gsub_file 'config/routes.rb', /get \"home\/index\"/, 'root :to => "home#index"'
+attention 'Setting up Steak.'
+
+gem 'steak',        :group => [:development, :test]
+gem 'capybara',     :group => [:development, :test]
+
+after_bundler { generate 'steak:install' }
+
+
+# ============================================================================
+# Steak
+# ============================================================================
+attention 'Setting up Steak.'
+
+gem 'steak',        :group => [:development, :test]
+gem 'capybara',     :group => [:development, :test]
+
+after_bundler { generate 'steak:install' }
+
+
+# ============================================================================
+# Autotest, Webrat, Factory Girl, Rails3 Generators
+# ============================================================================
+attention 'Setting up Autotest, Webrat, Factory Girl, and Rails 3 Generators.'
+
+gem 'autotest',           :group => [:development, :test]
+gem 'webrat',             :group => [:development, :test]
+gem 'factory_girl_rails', :group => [:development, :test]
+gem 'rails3-generators',  :group => [:development, :test]
+
+inject_into_file "config/initializers/generators.rb", :after => "Rails.application.config.generators do |g|\n" do
+  "    g.fixture_replacement :factory_girl,  :dir => 'spec/factories'"
 end
 
-if yes?("Would you like to generate a devise user?")
-  run "rails generate devise user"
-end
+# ============================================================================
+# Sass, Compass, Fancy Buttons
+# ============================================================================
+attention 'Setting up Sass, Compass and Fancy Buttons.'
 
-# ============================================================================
-# Run the compass init
-# ============================================================================
-if yes?("Would you like to use Compass?")
-  puts "Installing compass".yellow
+gem 'haml'
+gem 'compass'
+gem 'fancy-buttons'
+
+after_bundler do
   run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass'
 end
 
 # ============================================================================
-# Create some Models
+# Will Pagination, StateFlow, and Site Meta
 # ============================================================================
-if yes?("Would you like to generate some models to get started?")
-  models = ask("What are the model names? (e.g. separate them by commas: account, user, contact)")
-  models.split(',').each do |model|
-    model.strip!
-    puts "Generating #{model} model".yellow.bold
-    generate("model #{model}")
-  end
+attention 'Setting up Will Pagination, StateFlow, and Site Meta'
+
+gem 'will_paginate', '~> 3.0.pre2'
+gem 'stateflow'
+gem 'site_meta'
+
+
+# ============================================================================
+# Devise
+# ============================================================================
+attention "Setting up Devise."
+
+gem 'devise'
+
+after_bundler do
+  generate 'devise:install'
+  generate 'devise:views'
+  generate 'devise user'
+end
+
+attention 'Setting Devise Mailer in the config/environments/development.rb'
+
+gsub_file 'config/environments/development.rb', /# Don't care if the mailer can't send/, '# Devise Mailer Setup'
+gsub_file 'config/environments/development.rb', /config.action_mailer.raise_delivery_errors = false/ do
+<<-RUBY
+config.action_mailer.default_url_options = { :host => 'localhost:3000' }
+  # A dummy setup for development - no deliveries, but logged
+  config.action_mailer.delivery_method        = :smtp
+  config.action_mailer.perform_deliveries     = false
+  config.action_mailer.raise_delivery_errors  = true
+  config.action_mailer.default :charset => "utf-8"
+RUBY
+end
+
+attention 'Setting Devise Mailer in the config/environments/production.rb'
+
+gsub_file 'config/environments/production.rb', /config.i18n.fallbacks = true/ do
+<<-RUBY
+config.i18n.fallbacks = true
+
+  config.action_mailer.default_url_options = { :host => App::Project.domain }
+  ### ActionMailer Config
+  # Setup for production - deliveries, no errors raised
+  config.action_mailer.delivery_method        = :smtp
+  config.action_mailer.perform_deliveries     = true
+  config.action_mailer.raise_delivery_errors  = false
+  config.action_mailer.default :charset => "utf-8"
+RUBY
+end
+
+attention 'Setting Devise Mailer in the config/environments/test.rb'
+
+gsub_file 'config/environments/test.rb', /# Don't care if the mailer can't send/, '# Devise Mailer Setup'
+gsub_file 'config/environments/test.rb', /# Settings specified here will take precedence over those in config\/application.rb/ do
+<<-RUBY
+config.action_mailer.default_url_options = { :host => 'localhost:3000' }
+RUBY
 end
 
 
 # ============================================================================
-# final git checkin
+# Prevent Logging of Passwords
 # ============================================================================
-puts "Checking our changes into git.".green
-git :add    => '.'
-git :commit => "-am 'Abbey applied her configuration.'"
+attention 'Preventing the logging of passwords.'
+gsub_file 'config/application.rb', /:password/, ':password, :password_confirmation'
 
-puts "Abbey has setup everything for you.".green
+
+# ============================================================================
+# MongoDB Setup, if requested
+# ============================================================================
+if mongodb
+  attention 'Setting up tools to use Mongoid for MongoDB.'
+  
+  gem 'bson'
+  gem 'bson_ext'
+  gem 'mongoid', '~> 2.0.0.rc.6'
+  
+  after_bundler do
+    generate 'mongoid:config'
+    generate 'mongoid:install'
+  end
+
+attention 'Adding mongoid to config/initializers/generators.rb.'  
+inject_into_file "config/initializers/generators.rb", :after => "Rails.application.config.generators do |g|\n" do
+    "    g.orm              :mongoid"
+end
+  
+else
+  attention 'Setting up rake db:reseed task'
+  file "lib/tasks/reseed.rake", <<-END
+    namespace :db do
+      desc "Reseed database"
+      task :reseed => :environment do
+        Rake::Task['db:drop'].invoke
+        Rake::Task['db:create'].invoke
+        Rake::Task['db:migrate'].invoke
+        Rake::Task['db:seed'].invoke
+        Rake::Task['db:test:clone'].invoke
+      end
+    end
+  END
+end
+
+# ============================================================================
+# Run the after bundler tasks
+# ============================================================================
+attention 'Running Bundler and various tasks queued up for after bundler installs gems.'
+run 'bundler install'
+@add_to_bundler.each { |b| b.call }
+
+# ============================================================================
+# Doing the final Git Check-in
+# ============================================================================
+attention 'Checking in all of our changes.'
+git :add => '.'
+git :commit => "-am 'Added rspec, steak, compass, sass, devise.'"

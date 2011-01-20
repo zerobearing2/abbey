@@ -14,7 +14,7 @@ gsub_file 'config/environments/production.rb', /config.i18n.fallbacks = true/ do
 <<-RUBY
 config.i18n.fallbacks = true
 
-  config.action_mailer.default_url_options = { :host => 'yourhost.com' }
+  config.action_mailer.default_url_options = { :host => App::Project.domain }
   ### ActionMailer Config
   # Setup for production - deliveries, no errors raised
   config.action_mailer.delivery_method        = :smtp
