@@ -6,30 +6,29 @@ def attention(text)
 end
 
 @add_to_bundler = []
-def after_bundler
+def after_bundler(&block)
   @add_to_bundler << block
 end
 
 temple  = Pathname.new(File.expand_path(File.dirname(__FILE__)))
 app     = Pathname.new(File.expand_path(Dir.pwd))
 
-mysql?      = File.exists?(File.join(app, 'config/database.yml'))
-prototype?  = File.exists?(File.join(app, 'public/javascripts/prototype.js'))
+mysql       = File.exists?(File.join(app, 'config/database.yml'))
+prototype   = File.exists?(File.join(app, 'public/javascripts/prototype.js'))
 
-mongodb     = yes?('Would you like to use MongoDB?')
+mongodb     = yes?('Would you like to use MongoDB?') unless mysql
 
 # ============================================================================
 # Remove unnecessary files
 # ============================================================================
-files = ['README', 'public/index.html', 'public/favicon.ico', 
-         'public/images/rails.png']
-file.each { |f| run "rm #{f}" }
+files = ['README', 'public/index.html', 'public/favicon.ico', 'public/images/rails.png']
+files.each { |f| run "rm #{f}" }
 attention "Removed unneccessary files."
 
 # ============================================================================
 # Create and move
 # ============================================================================
-run "cp config/database.yml config/database.yml.example" if mysql?
+run "cp config/database.yml config/database.yml.example" if mysql
 run "touch Readme.mkd"
 run "mkdir -p app/views/shared"
 
@@ -39,6 +38,7 @@ attention "Created app/views/shared directory"
 # ============================================================================
 # Setup the gitignore file
 # ============================================================================
+run "rm .gitignore"
 file '.gitignore', <<-FILE
 .DS_Store
 log/*.log
@@ -63,6 +63,7 @@ attention "Updated the gitignore file."
 # Adding the seed system
 # ============================================================================
 run 'mkdir -p db/seeds'
+run 'rm db/seeds.rb'
 file 'db/seeds.rb', <<-RUBY
 require 'colored'
 Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}
@@ -73,11 +74,11 @@ attention "Setup the seed system."
 # ============================================================================
 # Install jQuery
 # ============================================================================
-if jquery?
+if !prototype
   inside "public/javascripts" do
-    get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js", "rails.js"
-    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js", "jquery/jquery.js" 
-    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery-ui.min.js", "jquery/jquery_ui.js"  
+    get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js",      "rails.js"
+    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js",      "jquery.js" 
+    get "http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js", "jquery_ui.js"  
     attention "Added jquery, jquery ui, and rails-jquery to the project."
   end
   gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
@@ -298,13 +299,6 @@ git :init
 git :add => '.'
 git :commit => "-am 'Initial commit of a clean rails application.'"
 
-# ============================================================================
-# Generators
-# ============================================================================
-initializer 'generators.rb', <<-RUBY
-Rails.application.config.generators do |g|
-end
-RUBY
 
 # ============================================================================
 # Rspec
@@ -313,14 +307,22 @@ attention 'Setting up rspec.'
 
 gem 'rspec-rails',  :group => [:development, :test]
 
-attention 'Setting up the config/initializers/generator.rb file.'
-inject_into_file "config/initializers/generators.rb", :after => "Rails.application.config.generators do |g|\n" do
-  "    g.test_framework   :rspec, :fixture => true, :views => false\n"
-  "    g.stylesheets      false"
-  "    g.template_engine  :erb"
+after_bundler do 
+  generate 'rspec:install'
 end
 
-after_bundler { generate 'rspec:install' }
+
+# ============================================================================
+# Steak
+# ============================================================================
+attention 'Setting up Steak.'
+
+gem 'steak',        :group => [:development, :test]
+gem 'capybara',     :group => [:development, :test]
+
+after_bundler do 
+  generate 'steak:install'
+end
 
 
 # ============================================================================
@@ -331,18 +333,9 @@ attention 'Setting up Steak.'
 gem 'steak',        :group => [:development, :test]
 gem 'capybara',     :group => [:development, :test]
 
-after_bundler { generate 'steak:install' }
-
-
-# ============================================================================
-# Steak
-# ============================================================================
-attention 'Setting up Steak.'
-
-gem 'steak',        :group => [:development, :test]
-gem 'capybara',     :group => [:development, :test]
-
-after_bundler { generate 'steak:install' }
+after_bundler do 
+  generate 'steak:install'
+end
 
 
 # ============================================================================
@@ -354,10 +347,6 @@ gem 'autotest',           :group => [:development, :test]
 gem 'webrat',             :group => [:development, :test]
 gem 'factory_girl_rails', :group => [:development, :test]
 gem 'rails3-generators',  :group => [:development, :test]
-
-inject_into_file "config/initializers/generators.rb", :after => "Rails.application.config.generators do |g|\n" do
-  "    g.fixture_replacement :factory_girl,  :dir => 'spec/factories'"
-end
 
 # ============================================================================
 # Sass, Compass, Fancy Buttons
@@ -436,6 +425,20 @@ end
 
 
 # ============================================================================
+# Setup the Generator initializer
+# ============================================================================
+attention 'Setting up the config/initializers/generator.rb file.'
+initializer 'generators.rb', <<-RUBY
+Rails.application.config.generators do |g|
+  g.stylesheets          false
+  g.template_engine      :erb
+  g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'
+  g.test_framework       :rspec, :fixture => true, :views => false
+end
+RUBY
+
+
+# ============================================================================
 # Prevent Logging of Passwords
 # ============================================================================
 attention 'Preventing the logging of passwords.'
@@ -456,25 +459,24 @@ if mongodb
     generate 'mongoid:config'
     generate 'mongoid:install'
   end
-
-attention 'Adding mongoid to config/initializers/generators.rb.'  
-inject_into_file "config/initializers/generators.rb", :after => "Rails.application.config.generators do |g|\n" do
-    "    g.orm              :mongoid"
-end
   
+  inject_into_file "config/initializers/generators.rb", :after => "g.test_framework       :rspec, :fixture => true, :views => false\n" do
+    "    g.orm                  :mongoid\n" if mongodb
+  end
+
 else
   attention 'Setting up rake db:reseed task'
   file "lib/tasks/reseed.rake", <<-END
-    namespace :db do
-      desc "Reseed database"
-      task :reseed => :environment do
-        Rake::Task['db:drop'].invoke
-        Rake::Task['db:create'].invoke
-        Rake::Task['db:migrate'].invoke
-        Rake::Task['db:seed'].invoke
-        Rake::Task['db:test:clone'].invoke
-      end
-    end
+namespace :db do
+  desc "Reseed database"
+  task :reseed => :environment do
+    Rake::Task['db:drop'].invoke
+    Rake::Task['db:create'].invoke
+    Rake::Task['db:migrate'].invoke
+    Rake::Task['db:seed'].invoke
+    Rake::Task['db:test:clone'].invoke
+  end
+end
   END
 end
 
