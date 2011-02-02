@@ -56,6 +56,8 @@ public/system
 coverage/*
 .sass-cache
 .bundle-cache
+*.swo
+*.swp
 FILE
 
 attention "Updated the gitignore file."
@@ -497,4 +499,4 @@ run 'bundler install'
 # ============================================================================
 attention 'Checking in all of our changes.'
 git :add => '.'
-git :commit => "-am 'Added rspec, steak, compass, sass, devise.'"
+git :commit => "-am 'Added compass, sass, devise.'"
