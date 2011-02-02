@@ -5,9 +5,9 @@ def attention(text)
   $stdout.puts(text.to_s.green.bold.rjust(10))
 end
 
-@add_to_bundler = []
+@run_after_bundler = []
 def after_bundler(&block)
-  @add_to_bundler << block
+  @run_after_bundler << block
 end
 
 temple  = Pathname.new(File.expand_path(File.dirname(__FILE__)))
@@ -15,6 +15,7 @@ app     = Pathname.new(File.expand_path(Dir.pwd))
 
 mysql       = File.exists?(File.join(app, 'config/database.yml'))
 prototype   = File.exists?(File.join(app, 'public/javascripts/prototype.js'))
+testunit    = File.exists?(File.join(app, 'test/test_helper.rb'))
 
 mongodb     = yes?('Would you like to use MongoDB?') unless mysql
 
@@ -303,50 +304,49 @@ git :commit => "-am 'Initial commit of a clean rails application.'"
 # ============================================================================
 # Rspec
 # ============================================================================
-attention 'Setting up rspec.'
-
-gem 'rspec-rails',  :group => [:development, :test]
-
-after_bundler do 
-  generate 'rspec:install'
+unless testunit
+  attention 'Setting up rspec.'
+  
+  gem 'rspec-rails',  :group => [:development, :test]
+  
+  after_bundler do 
+    generate 'rspec:install'
+  end
 end
-
 
 # ============================================================================
 # Steak
 # ============================================================================
-attention 'Setting up Steak.'
-
-gem 'steak',        :group => [:development, :test]
-gem 'capybara',     :group => [:development, :test]
-
-after_bundler do 
-  generate 'steak:install'
-end
-
-
-# ============================================================================
-# Steak
-# ============================================================================
-attention 'Setting up Steak.'
-
-gem 'steak',        :group => [:development, :test]
-gem 'capybara',     :group => [:development, :test]
-
-after_bundler do 
-  generate 'steak:install'
+unless testunit
+  attention 'Setting up Steak.'
+  
+  gem 'steak',        :group => [:development, :test]
+  gem 'capybara',     :group => [:development, :test]
+  
+  after_bundler do 
+    generate 'steak:install'
+  end
 end
 
 
 # ============================================================================
 # Autotest, Webrat, Factory Girl, Rails3 Generators
 # ============================================================================
-attention 'Setting up Autotest, Webrat, Factory Girl, and Rails 3 Generators.'
+attention 'Setting up Autotest, ZenTest, Database Cleaner, Webrat, Factory Girl, and Rails 3 Generators.'
 
+gem 'database_cleaner',   :group => [:development, :test]
+gem 'ZenTest',            :group => [:development, :test]
 gem 'autotest',           :group => [:development, :test]
 gem 'webrat',             :group => [:development, :test]
-gem 'factory_girl_rails', :group => [:development, :test]
+gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:development, :test]
 gem 'rails3-generators',  :group => [:development, :test]
+
+
+attention "Setting up .autotest file."
+file '.autotest', <<-EOF
+require 'autotest/fsevent'
+require 'autotest/growl'
+EOF
 
 # ============================================================================
 # Sass, Compass, Fancy Buttons
@@ -433,10 +433,15 @@ Rails.application.config.generators do |g|
   g.stylesheets          false
   g.template_engine      :erb
   g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'
-  g.test_framework       :rspec, :fixture => true, :views => false
 end
 RUBY
 
+attention 'Adding rspec to the generators.rb file.'
+unless testunit
+  inject_into_file 'config/initializers/generator.rb', :after => "g.template_engine      :erb" do
+    'g.test_framework       :rspec, :fixture => true, :views => false'
+  end
+end
 
 # ============================================================================
 # Prevent Logging of Passwords
@@ -460,8 +465,8 @@ if mongodb
     generate 'mongoid:install'
   end
   
-  inject_into_file "config/initializers/generators.rb", :after => "g.test_framework       :rspec, :fixture => true, :views => false\n" do
-    "    g.orm                  :mongoid\n" if mongodb
+  inject_into_file "config/initializers/generators.rb", :after => "g.template_engine      :erb\n" do
+    "    g.orm                  :mongoid\n"
   end
 
 else
@@ -485,7 +490,7 @@ end
 # ============================================================================
 attention 'Running Bundler and various tasks queued up for after bundler installs gems.'
 run 'bundler install'
-@add_to_bundler.each { |b| b.call }
+@run_after_bundler.each { |b| b.call }
 
 # ============================================================================
 # Doing the final Git Check-in
