@@ -320,13 +320,13 @@ end
 # Steak
 # ============================================================================
 unless testunit
-  attention 'Setting up Steak.'
+  attention 'Setting up Cucumber.'
   
-  gem 'steak',        :group => [:development, :test]
+  gem 'cucumber',        :group => [:development, :test]
   gem 'capybara',     :group => [:development, :test]
   
   after_bundler do 
-    generate 'steak:install'
+    generate 'cucumber:install'
   end
 end
 
@@ -349,6 +349,19 @@ file '.autotest', <<-EOF
 require 'autotest/fsevent'
 require 'autotest/growl'
 EOF
+
+
+# ============================================================================
+# SimpleForm Setup
+# ============================================================================
+attention 'Adding Simple Form'
+
+gem 'simple_form'
+after_bundler do
+  generate 'simple_form:install'
+end
+
+
 
 # ============================================================================
 # Sass, Compass, Fancy Buttons
@@ -433,14 +446,14 @@ attention 'Setting up the config/initializers/generator.rb file.'
 initializer 'generators.rb', <<-RUBY
 Rails.application.config.generators do |g|
   g.stylesheets          false
-  g.template_engine      :erb
+  g.template_engine      :haml
   g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'
 end
 RUBY
 
 attention 'Adding rspec to the generators.rb file.'
 unless testunit
-  inject_into_file 'config/initializers/generator.rb', :after => "g.template_engine      :erb" do
+  inject_into_file 'config/initializers/generators.rb', :after => "g.template_engine      :erb" do
     'g.test_framework       :rspec, :fixture => true, :views => false'
   end
 end
@@ -460,14 +473,14 @@ if mongodb
   
   gem 'bson'
   gem 'bson_ext'
-  gem 'mongoid', '~> 2.0.0.rc.6'
+  gem 'mongoid', '~> 2.0.0.rc.7'
   
   after_bundler do
     generate 'mongoid:config'
     generate 'mongoid:install'
   end
   
-  inject_into_file "config/initializers/generators.rb", :after => "g.template_engine      :erb\n" do
+  inject_into_file "config/initializers/generators.rb", :after => "g.template_engine      :haml\n" do
     "    g.orm                  :mongoid\n"
   end
 
