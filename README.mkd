@@ -40,8 +40,8 @@ The db/seeds.rb file is altered and it adds a homebrewed seeding system. It crea
 
 Using the "colored" gem and a custom "announce" method, you can add stdout messages of what is being created and/or what has been created:
 
-announce "Creating 3 users..."
-announce "Three users named ... have been created."
+    announce "Creating 3 users..."
+    announce "Three users named ... have been created."
 
 ### Loading the lib folder
 
@@ -58,12 +58,12 @@ Major, Minor, and Point release versioning is supported.
 
 Having 1 place to put the projects name, makes it easier to change later on, specially if you have the project name in the header, footer, and anywhere else in the views. You can add the name by adding the following code:
 
-App::Project.name
+    App::Project.name
 
 You could also add:
 
-App::Project.domain
-App::Project.version
+    App::Project.domain
+    App::Project.version
 
 You can change the project name by opening: lib/app.rb and editing the "name" method of the class "Project". You can also edit the domain there as well. The version is pulled from the build.version file and used the rake tasks to increase/decrease the version build number. Just to rake -T to see the available tasks.
 
@@ -82,14 +82,14 @@ If you have your ~/.irbrc file setup to take advantage of those, then you can us
 
 Autotest is automatically added to the project and in the root of the project Abbey adds: .autotest with the following:
 
-require 'autotest/fsevent'
-require 'autotest/growl'
+    require 'autotest/fsevent'
+    require 'autotest/growl'
 
 So, make sure you have those gems installed to take advantage of a nice autotest setup.
 
 ### Form Support
 
-Simple form is also added automatically to the project. I've found that it is really nice and easy to use for doing of your forms. Considering that it is upkept by a Rails Core guy, Jose Valim, I find it so be more than suitable.
+Simple form is also added automatically to the project. I've found that it is really nice and easy to use for doing of your forms. Considering that it is up-kept by a Rails Core guy, Jose Valim, I find it so be more than suitable.
 
 ### Generators
 
@@ -107,8 +107,6 @@ After everything has been setup, bundler will install all the gems and then run 
 * devise        (install, views, and user)
 * compass       (sets sass directory to app/stylesheets and uses sass syntax)
 * simple form   (install)
-* 
-
 
 ### Other Gems Automatically Added
 
