@@ -46,7 +46,7 @@ log/*.log
 tmp/**/*
 config/database.yml
 db/*.sqlite3
-public/uploads/*
+public/uploads
 gems/*
 !gems/cache
 !gems/bundler
@@ -159,8 +159,7 @@ module App
 
       # Return the current version number from the build version file.
       def current
-        ver = read_build_file
-        "\#{ver}".green
+        puts "\#{read_build_file}".green
       end
       
       
@@ -188,7 +187,7 @@ module App
         File.open(VERSION_FILE, 'w') { |f| f.write new_version }
         
         # give the user a message that it has completed and show the previous/current version.
-        print "Previous Version: \#{version} - New Version: \#{new_version}".green
+        puts "Previous Version: \#{version} - New Version: \#{new_version}".green
       end
   
   
@@ -295,6 +294,14 @@ CODE
 attention "Added rake tasks to easily use the app.rb project management script."
 
 # ============================================================================
+# Add development Gems for when using Rails Console
+# ============================================================================
+gem 'hirb',               :group => [:development]
+gem 'wirble',             :group => [:development]
+gem 'interactive_editor', :group => [:development]
+gem 'utility_belt',       :group => [:development]
+
+# ============================================================================
 # Git initial checking
 # ============================================================================
 attention "Checking everything into git."
@@ -322,8 +329,8 @@ end
 unless testunit
   attention 'Setting up Cucumber.'
   
-  gem 'cucumber',        :group => [:development, :test]
-  gem 'capybara',     :group => [:development, :test]
+  gem 'cucumber-rails', :group => [:test]
+  gem 'capybara',       :group => [:test]
   
   after_bundler do 
     generate 'cucumber:install'
@@ -339,9 +346,9 @@ attention 'Setting up Autotest, ZenTest, Database Cleaner, Webrat, Factory Girl,
 gem 'database_cleaner',   :group => [:development, :test]
 gem 'ZenTest',            :group => [:development, :test]
 gem 'autotest',           :group => [:development, :test]
-gem 'webrat',             :group => [:development, :test]
-gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:development, :test]
-gem 'rails3-generators',  :group => [:development, :test]
+gem 'webrat',             :group => [:test]
+gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:test]
+gem 'rails3-generators',  :group => [:development]
 
 
 attention "Setting up .autotest file."
@@ -471,9 +478,8 @@ gsub_file 'config/application.rb', /:password/, ':password, :password_confirmati
 if mongodb
   attention 'Setting up tools to use Mongoid for MongoDB.'
   
-  gem 'bson'
-  gem 'bson_ext'
-  gem 'mongoid', '~> 2.0.0.rc.7'
+  gem 'bson_ext', '~> 1.2.2'
+  gem 'mongoid',  '~> 2.0.0.rc.7'
   
   after_bundler do
     generate 'mongoid:config'
