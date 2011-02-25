@@ -160,7 +160,7 @@ module App
 
       # Return the current version number from the build version file.
       def current
-        puts "\#{read_build_file}".green
+        read_build_file
       end
       
       
