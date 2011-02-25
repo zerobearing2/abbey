@@ -1,0 +1,166 @@
+# Abbey - A Rails 3 Template System
+
+Abbey is designed to make setting up a new rails project easy. Taking advantage of Rails 3 Template Engine and my lack of desire for setting up rails applications, abbey was born.
+
+Abbey isn't anything out of the ordinary, she's the girl next door. It's simple and easy to work with...at least that's the intention. :)
+
+The following technologies are support within Abbey:
+
+* MySQL
+* Mongoid
+* jQuery
+* Prototype
+* ERB
+* HAML
+* Test Unit
+* Rspec
+* Cucumber
+
+## Initially
+
+Abbey automatically removes all unnecessary files:
+
+* README
+* public/index.html
+* public/favicon.ico
+* public/images/rails.png
+
+The README file is replaced with a markdown version: Readme.mkd.
+
+A new views directory is created called: app/views/shared, which is typical is rails applications.
+
+### Git Ignore File
+
+A new gitignore file is created that ignores log files, .DS_Store, database.yml, public/uploads (assets, system), .sass-cache, .bundle-cache, and vim swap files. (and other things)
+
+
+### Seeding Data
+
+The db/seeds.rb file is altered and it adds a homebrewed seeding system. It creates a seeds directory (db/seeds/) where you can add files like: 001\_create\_users.rb and add seeding data for creating users. The db/seeds.rb file loads all the files within db/seeds/ and sorts them so they are ran in order. 
+
+Using the "colored" gem and a custom "announce" method, you can add stdout messages of what is being created and/or what has been created:
+
+announce "Creating 3 users..."
+announce "Three users named ... have been created."
+
+### Loading the lib folder
+
+Everything in the lib folder is set to be auto-loaded within the config/application.rb file.
+
+
+### Project Versioning
+
+A custom versioning file is created within the lib/ directory (lib/app.rb) that allows you to set the name of the application, the domain, and get the current version of the application.
+
+A rake file is created (lib/tasks/version.rake) so versioning up/down of the project itself is possible. The current version of the project is located in config/build.version. On creation of the new rails application, the version is set to: 0.0.1.
+
+Major, Minor, and Point release versioning is supported. 
+
+Having 1 place to put the projects name, makes it easier to change later on, specially if you have the project name in the header, footer, and anywhere else in the views. You can add the name by adding the following code:
+
+App::Project.name
+
+You could also add:
+
+App::Project.domain
+App::Project.version
+
+You can change the project name by opening: lib/app.rb and editing the "name" method of the class "Project". You can also edit the domain there as well. The version is pulled from the build.version file and used the rake tasks to increase/decrease the version build number. Just to rake -T to see the available tasks.
+
+### Rails Console
+
+The following gems are added to make the rails console a bit nicer:
+
+* hirb
+* wirble
+* interactive
+* utility belt
+
+If you have your ~/.irbrc file setup to take advantage of those, then you can use them in the rails console.
+
+### Autotest
+
+Autotest is automatically added to the project and in the root of the project Abbey adds: .autotest with the following:
+
+require 'autotest/fsevent'
+require 'autotest/growl'
+
+So, make sure you have those gems installed to take advantage of a nice autotest setup.
+
+### Form Support
+
+Simple form is also added automatically to the project. I've found that it is really nice and easy to use for doing of your forms. Considering that it is upkept by a Rails Core guy, Jose Valim, I find it so be more than suitable.
+
+### Generators
+
+Depending on your new rails config, a custom initializer is created: generators.rb (config/initializers/). It specifies that stylesheets will not be created with each controller. It specifies the templating engine you've chosen; factory girl is used as the fixture replacement; and if mongoid is use, it's set as the ORM. If you're using rpsec, then it will also be set as the testing framework.
+
+So, when you create a new model, these settings will be applied.
+
+### Bundler
+
+After everything has been setup, bundler will install all the gems and then run all the generators for:
+
+* rspec         (unless using test unit)
+* cucumber      (skipping database if mongoid and using capybara)
+* mongoid       (unless using mysql - config and install)
+* devise        (install, views, and user)
+* compass       (sets sass directory to app/stylesheets and uses sass syntax)
+* simple form   (install)
+* 
+
+
+### Other Gems Automatically Added
+
+* will paginate (3.0.pre2)
+* stateflow (for state machine)
+* site meta
+
+## Database
+
+Abbey determines if you're using mysql (rails new project -d=mysql or rails new project -O) or not. If you choose not to use mysql, it will ask you if you want to use mongoid. Mongoid is the only other database supported within abbey, because that's what I use.
+
+If MySQL is used, Abbey sets up a rake task to reseed a database. It drops the database, creates it, migrates it, applies the seed data, and then clones to the test database. The command is: rake db:reseed.
+
+Also, if using MySQL, the database.yml file is copied to database.yml.example and the database.yml is set to be ignored within the .gitignore file.
+
+## JavaScript
+
+Abbey will also determine if you've chosen to use prototype or not (rails new project -J). If you have passed the '-J' option, it will assume you want jquery and install the following:
+
+* jQuery
+* jQuery UI
+* rails.js for jquery
+
+Abbey will also add jquery, jquery ui and rails.js to be autoloaded in the config/application.rb file.
+
+Abbey will also install (without asking) mondernizr.js. It will NOT be added to the autoload list.
+
+## Templating
+
+Abbey will ask you if you want to use ERB or HAML. 
+
+The following gems will be installed:
+
+* haml
+* compass
+* fancy-buttons
+
+SASS and Compass are automatically used for the project.
+
+## Testing
+
+Abbey will determine if you've chosen to not use test unit (rails new project -T) and install Rspec and Cucumber. the following gems will also be added:
+
+* rspec-rails
+* cucumber-rails
+* capybara
+* webrat
+* ZenTest
+* autotest
+* database cleaner
+* factory girl
+
+## Authentication
+
+Abbey used 'devise' for authentication and will generate the view files and a devise user automatically. Abbey will also setup each environment (dev, test, prod) for devise's mailing. (config/environments/*)

@@ -10,21 +10,24 @@ def after_bundler(&block)
   @run_after_bundler << block
 end
 
-temple  = Pathname.new(File.expand_path(File.dirname(__FILE__)))
-app     = Pathname.new(File.expand_path(Dir.pwd))
+temple      = Pathname.new(File.expand_path(File.dirname(__FILE__)))
+app         = Pathname.new(File.expand_path(Dir.pwd))
 
 mysql       = File.exists?(File.join(app, 'config/database.yml'))
 prototype   = File.exists?(File.join(app, 'public/javascripts/prototype.js'))
 testunit    = File.exists?(File.join(app, 'test/test_helper.rb'))
 
+# Ask some questions
 mongodb     = yes?('Would you like to use MongoDB?') unless mysql
+haml        = yes?('Would you like to user haml?')
+
 
 # ============================================================================
 # Remove unnecessary files
 # ============================================================================
 files = ['README', 'public/index.html', 'public/favicon.ico', 'public/images/rails.png']
 files.each { |f| run "rm #{f}" }
-attention "Removed unneccessary files."
+attention "Removed unnecessary files."
 
 # ============================================================================
 # Create and move
@@ -74,7 +77,7 @@ def announce(text); $stdout.puts(text.to_s.green.bold.rjust(10)); end
 Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}
 RUBY
 
-attention "Setup the seed system."
+attention "The seed system is all setup."
 
 # ============================================================================
 # Install jQuery
@@ -313,30 +316,29 @@ git :commit => "-am 'Initial commit of a clean rails application.'"
 
 
 # ============================================================================
-# Rspec
+# Rspec && Cucumber
 # ============================================================================
 unless testunit
-  attention 'Setting up rspec.'
+  attention 'Setting up Cucumber and Rspec.'
   
-  gem 'rspec-rails',  :group => [:development, :test]
+  gem 'database_cleaner',   :group => [:development, :test]
+  gem 'cucumber-rails',     :group => [:test]
+  gem 'capybara',           :group => [:test]
+  gem 'rspec-rails',        :group => [:development, :test]
   
   after_bundler do 
+    generate 'cucumber:install --capybara --skip-database'
     generate 'rspec:install'
   end
-end
-
-# ============================================================================
-# Steak
-# ============================================================================
-unless testunit
-  attention 'Setting up Cucumber.'
   
-  gem 'cucumber-rails', :group => [:test]
-  gem 'capybara',       :group => [:test]
-  
-  after_bundler do 
-    generate 'cucumber:install'
+  file "lib/tasks/db.rake", <<-CODE
+namespace :db do
+  namespace :test do
+    task :prepare do
+    end
   end
+end
+  CODE
 end
 
 
@@ -345,7 +347,6 @@ end
 # ============================================================================
 attention 'Setting up Autotest, ZenTest, Database Cleaner, Webrat, Factory Girl, and Rails 3 Generators.'
 
-gem 'database_cleaner',   :group => [:development, :test]
 gem 'ZenTest',            :group => [:development, :test]
 gem 'autotest',           :group => [:development, :test]
 gem 'webrat',             :group => [:test]
@@ -382,7 +383,7 @@ gem 'compass'
 gem 'fancy-buttons'
 
 after_bundler do
-  run 'compass init rails --css-dir=public/stylesheets/compiled --sass-dir=app/stylesheets --syntax sass'
+  run 'compass init rails --css-dir=public/stylesheets --sass-dir=app/stylesheets --syntax sass'
 end
 
 # ============================================================================
@@ -452,10 +453,12 @@ end
 # Setup the Generator initializer
 # ============================================================================
 attention 'Setting up the config/initializers/generator.rb file.'
+template_engine = haml ? :haml : :erb
+
 initializer 'generators.rb', <<-RUBY
 Rails.application.config.generators do |g|
   g.stylesheets          false
-  g.template_engine      :haml
+  g.template_engine      #{template_engine}
   g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'
 end
 RUBY
@@ -488,7 +491,7 @@ if mongodb
     generate 'mongoid:install'
   end
   
-  inject_into_file "config/initializers/generators.rb", :after => "g.template_engine      :haml\n" do
+  inject_into_file "config/initializers/generators.rb", :after => "g.stylesheets          false\n" do
     "    g.orm                  :mongoid\n"
   end
 
