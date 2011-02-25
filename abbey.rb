@@ -21,6 +21,9 @@ testunit    = File.exists?(File.join(app, 'test/test_helper.rb'))
 mongodb     = yes?('Would you like to use MongoDB?') unless mysql
 haml        = yes?('Would you like to user haml?')
 
+if !mysql && !mongodb
+  gem 'sqlite3'
+end
 
 # ============================================================================
 # Remove unnecessary files
@@ -453,12 +456,17 @@ end
 # Setup the Generator initializer
 # ============================================================================
 attention 'Setting up the config/initializers/generator.rb file.'
-template_engine = haml ? :haml : :erb
+template_engine = haml ? "g.template_engine      :haml" : "g.template_engine      :erb"
+
+if haml
+  gem "ruby_parser"
+  gem "hpricot"
+end
 
 initializer 'generators.rb', <<-RUBY
 Rails.application.config.generators do |g|
   g.stylesheets          false
-  g.template_engine      #{template_engine}
+  #{template_engine}
   g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'
 end
 RUBY
@@ -483,6 +491,7 @@ gsub_file 'config/application.rb', /:password/, ':password, :password_confirmati
 if mongodb
   attention 'Setting up tools to use Mongoid for MongoDB.'
   
+  gem "bson",     "~> 1.2.2"
   gem 'bson_ext', '~> 1.2.2'
   gem 'mongoid',  '~> 2.0.0.rc.7'
   
