@@ -65,6 +65,7 @@ attention "Updated the gitignore file."
 # ============================================================================
 # Adding the seed system
 # ============================================================================
+gem "colored"
 run 'mkdir -p db/seeds'
 run 'rm db/seeds.rb'
 file 'db/seeds.rb', <<-RUBY
