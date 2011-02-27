@@ -19,7 +19,7 @@ testunit    = File.exists?(File.join(app, 'test/test_helper.rb'))
 
 # Ask some questions
 mongodb     = yes?('Would you like to use MongoDB?') unless mysql
-haml        = yes?('Would you like to user haml?')
+haml        = yes?('Would you like to use haml?')
 
 if !mysql && !mongodb
   gem 'sqlite3'
@@ -88,8 +88,8 @@ attention "The seed system is all setup."
 if !prototype
   inside "public/javascripts" do
     get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js",      "rails.js"
-    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js",      "jquery.js" 
-    get "http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js", "jquery_ui.js"  
+    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js",      "jquery.js"
+    get "http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js", "jquery_ui.js"
     attention "Added jquery, jquery ui, and rails-jquery to the project."
   end
   gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
@@ -100,7 +100,7 @@ end
 # ============================================================================
 # Install Modernizr
 # ============================================================================
-inside "public/javascripts" do 
+inside "public/javascripts" do
   get "https://github.com/Modernizr/Modernizr/raw/master/modernizr.js", "modernizr.js"
   attention "Added modernizr to the project."
 end
@@ -125,63 +125,63 @@ require 'colored'
 module App
   class Project
     class << self
-    
+
       def name
         'Project Name'
       end
-    
+
       def domain
         'Domain Name'
       end
-    
+
       def version
         Version.current
       end
-    
+
     end
   end
-  
+
   class VersionError < StandardError; end
 
   class Version
     class << self
-    
+
       ##
       # The location of the version number file
       VERSION_CONFIG  = File.expand_path(File.join(File.dirname(__FILE__), "..", "config"))
       VERSION_FILE    = File.expand_path(File.join(VERSION_CONFIG, "build.version"))
       @@releases      = %w[major minor point].freeze
-  
-  
+
+
       # Generate a build.version file to the config/ directory of a rails application.
       def generate_build_file
-        
+
         # create the config directory if it doesn't already exist
         FileUtils.mkdir_p(VERSION_CONFIG) unless File.exists?(VERSION_CONFIG)
-        
+
         # create the build.version file and add the first version, 0.0.1
         File.open(VERSION_FILE, 'w') { |f| f.write '0.0.1' }
         print "Created a build version file (build.version) located at \#{VERSION_FILE.to_s}"
       end
-  
+
 
       # Return the current version number from the build version file.
       def current
         read_build_file
       end
-      
-      
+
+
       # Read the Build File
       def read_build_file
         (File.read(VERSION_FILE).chomp rescue 0)
       end
 
-  
+
       # Verison up or down for major, minor, and point releases
       def versioning(direction, release)
         version     = read_build_file
         int_ver     = version.split('.').join().to_i
-        
+
         # case to determine versioning release
         new_version = case release
         when :major then update_build_version(int_ver, direction, 100)
@@ -190,49 +190,49 @@ module App
         else
           raise ArgumentError, "You can only increase the version number by major, minor, or point."
         end
-        
+
         # save the version number to the build version file
         File.open(VERSION_FILE, 'w') { |f| f.write new_version }
-        
+
         # give the user a message that it has completed and show the previous/current version.
         puts "Previous Version: \#{version} - New Version: \#{new_version}".green
       end
-  
-  
+
+
       # Method Missing for capturing the Version.up and Version.down
       def method_missing(direction, release)
         raise VersionError.new("You can only version up or down.") unless ['up', 'down'].include?(direction)
-        
+
         # if major/minor/point is requested
         if @@releases.include?(release.to_s.downcase)
           versioning(direction, release)
         else
           super
         end
-        
+
       end
-  
-  
+
+
       private
-    
+
         # Does the actual updating of the version numbers
         def update_build_version(version, direction, points)
-          
+
           # what direction is being requested
           new_version = case direction
-          
+
           # add version points to the current version
           when :up    then ("%03d" % (version + points)).split(//).join('.')
-            
+
           # minus version points from the current version
           when :down  then ("%03d" % (version - points unless version == 0)).split(//).join('.')
-          
+
           else
-            
+
             # the current version
             "%03d" % version
           end
-          
+
           new_version
         end
     end
@@ -251,11 +251,11 @@ namespace :project do
   task :version => :environment do
     puts "\#{App::Project.name}'s version: \#{App::Project.version}."
   end
-  
+
   task :name => :environment do
     puts "Project name: \#{App::Project.name}"
   end
-  
+
   task :domain => :environment do
     puts "Project's domain name: \#{App::Project.domain}"
   end
@@ -266,37 +266,37 @@ namespace :version do
   task :point_release => :environment do
     App::Version.version_it(:up, :point)
   end
-  
+
   desc 'Minor Release'
   task :minor_release => :environment do
     App::Version.version_it(:up, :minor)
   end
-  
+
   desc 'Major Release'
   task :major_release => :environment do
     App::Version.version_it(:up, :major)
   end
-  
-  
+
+
   # Downgrade version
   namespace :down do
-    
+
     desc 'Downgrade Point Release'
     task :point_release => :environment do
       App::Version.version_it(:down, :point)
     end
-  
+
     desc 'Downgrade Minor Release'
     task :minor_release => :environment do
       App::Version.version_it(:down, :minor)
     end
-  
+
     desc 'Downgrade Major Release'
     task :major_release => :environment do
       App::Version.version_it(:down, :major)
     end
   end
-end  
+end
 CODE
 
 attention "Added rake tasks to easily use the app.rb project management script."
@@ -323,17 +323,17 @@ git :commit => "-am 'Initial commit of a clean rails application.'"
 # ============================================================================
 unless testunit
   attention 'Setting up Cucumber and Rspec.'
-  
+
   gem 'database_cleaner',   :group => [:development, :test]
   gem 'cucumber-rails',     :group => [:test]
   gem 'capybara',           :group => [:test]
   gem 'rspec-rails',        :group => [:development, :test]
-  
-  after_bundler do 
+
+  after_bundler do
     generate 'cucumber:install --capybara --skip-database'
     generate 'rspec:install'
   end
-  
+
   file "lib/tasks/db.rake", <<-CODE
 namespace :db do
   namespace :test do
@@ -490,16 +490,16 @@ gsub_file 'config/application.rb', /:password/, ':password, :password_confirmati
 # ============================================================================
 if mongodb
   attention 'Setting up tools to use Mongoid for MongoDB.'
-  
+
   gem "bson",     "~> 1.2.2"
   gem 'bson_ext', '~> 1.2.2'
   gem 'mongoid',  '~> 2.0.0.rc.7'
-  
+
   after_bundler do
     generate 'mongoid:config'
     generate 'mongoid:install'
   end
-  
+
   inject_into_file "config/initializers/generators.rb", :after => "g.stylesheets          false\n" do
     "    g.orm                  :mongoid\n"
   end
