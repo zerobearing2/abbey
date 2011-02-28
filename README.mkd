@@ -16,6 +16,10 @@ The following technologies are support within Abbey:
 * Rspec
 * Cucumber
 
+## PreRequisites
+
+Install the 'colored' gem.
+
 ## Initially
 
 Abbey automatically removes all unnecessary files:

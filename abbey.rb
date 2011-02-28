@@ -310,11 +310,29 @@ gem 'interactive_editor', :group => [:development]
 gem 'utility_belt',       :group => [:development]
 
 # ============================================================================
+# Autotest, Webrat, Factory Girl, Rails3 Generators
+# ============================================================================
+attention 'Setting up Autotest, ZenTest, Database Cleaner, Webrat, Factory Girl, and Rails 3 Generators.'
+
+gem 'ZenTest',                            :group => [:development, :test]
+gem 'autotest',                           :group => [:development, :test]
+gem 'webrat',                             :group => [:test]
+gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:test]
+gem 'rails3-generators',                  :group => [:development]
+
+
+attention "Setting up .autotest file."
+file '.autotest', <<-EOF
+require 'autotest/fsevent'
+require 'autotest/growl'
+EOF
+
+# ============================================================================
 # Git initial checking
 # ============================================================================
 attention "Checking everything into git."
 git :init
-git :add => '.'
+git :add    => '.'
 git :commit => "-am 'Initial commit of a clean rails application.'"
 
 
@@ -330,7 +348,7 @@ unless testunit
   gem 'rspec-rails',        :group => [:development, :test]
   
   after_bundler do 
-    generate 'cucumber:install --capybara --skip-database'
+    generate 'cucumber:install --capybara --skip-database --rspec'
     generate 'rspec:install'
   end
   
@@ -343,25 +361,6 @@ namespace :db do
 end
   CODE
 end
-
-
-# ============================================================================
-# Autotest, Webrat, Factory Girl, Rails3 Generators
-# ============================================================================
-attention 'Setting up Autotest, ZenTest, Database Cleaner, Webrat, Factory Girl, and Rails 3 Generators.'
-
-gem 'ZenTest',            :group => [:development, :test]
-gem 'autotest',           :group => [:development, :test]
-gem 'webrat',             :group => [:test]
-gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:test]
-gem 'rails3-generators',  :group => [:development]
-
-
-attention "Setting up .autotest file."
-file '.autotest', <<-EOF
-require 'autotest/fsevent'
-require 'autotest/growl'
-EOF
 
 
 # ============================================================================
@@ -461,6 +460,7 @@ template_engine = haml ? "g.template_engine      :haml" : "g.template_engine    
 if haml
   gem "ruby_parser"
   gem "hpricot"
+  gem "haml-rails"
 end
 
 initializer 'generators.rb', <<-RUBY
@@ -473,7 +473,7 @@ RUBY
 
 attention 'Adding rspec to the generators.rb file.'
 unless testunit
-  inject_into_file 'config/initializers/generators.rb', :after => "g.template_engine      :erb" do
+  inject_into_file 'config/initializers/generators.rb', :after => "g.template_engine      :erb\n" do
     'g.test_framework       :rspec, :fixture => true, :views => false'
   end
 end
@@ -525,7 +525,7 @@ end
 # ============================================================================
 attention 'Running Bundler and various tasks queued up for after bundler installs gems.'
 run 'bundler install'
-@run_after_bundler.each { |b| b.call }
+@run_after_bundler.each { |b| b.call unless b.nil? }
 
 # ============================================================================
 # Doing the final Git Check-in
