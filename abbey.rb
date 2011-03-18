@@ -56,7 +56,6 @@ public/uploads
 gems/*
 !gems/cache
 !gems/bundler
-.rvmrc
 public/assets
 public/system
 coverage/*
@@ -64,14 +63,66 @@ coverage/*
 .bundle-cache
 *.swo
 *.swp
+vendor/ruby
 FILE
 
 attention "Updated the gitignore file."
 
 # ============================================================================
+# Adding Gems
+# ============================================================================
+gem 'colored'
+
+# Add development Gems for when using Rails Console
+gem 'hirb',                               :group => [:development]
+gem 'wirble',                             :group => [:development]
+gem 'interactive_editor',                 :group => [:development]
+gem 'utility_belt',                       :group => [:development]
+gem 'ZenTest',                            :group => [:development, :test]
+gem 'autotest',                           :group => [:development, :test]
+gem 'webrat',                             :group => [:test]
+gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:test]
+gem 'rails3-generators',                  :group => [:development]
+
+unless testunit
+  attention "Setting up rspec and rspec related gems."
+  gem 'database_cleaner',                 :group => [:development, :test]
+  gem 'cucumber-rails',                   :group => [:test]
+  gem 'capybara',                         :group => [:test]
+  gem 'rspec-rails',                      :group => [:development, :test]
+end
+
+
+# Will Pagination, StateFlow, and Site Meta
+attention 'Setting up Will Pagination, StateFlow, and Site Meta'
+
+gem 'simple_form'
+gem 'haml'
+gem 'compass'
+gem 'fancy-buttons'
+gem 'will_paginate', '~> 3.0.pre2'
+gem 'stateflow'
+gem 'site_meta'
+gem 'devise'
+gem 'devise_invitable'
+
+if haml
+  attention 'Setting up HAML'
+  gem "ruby_parser"
+  gem "hpricot"
+  gem "haml-rails"
+end
+
+if mongodb
+  attention 'Setting up MongoDB'
+  gem "bson",     "~> 1.2.2"
+  gem 'bson_ext', '~> 1.2.2'
+  gem 'mongoid',  '~> 2.0.0.rc.7'
+end
+
+# ============================================================================
 # Adding the seed system
 # ============================================================================
-gem "colored"
 run 'mkdir -p db/seeds'
 run 'rm db/seeds.rb'
 file 'db/seeds.rb', <<-RUBY
@@ -302,24 +353,9 @@ CODE
 attention "Added rake tasks to easily use the app.rb project management script."
 
 # ============================================================================
-# Add development Gems for when using Rails Console
-# ============================================================================
-gem 'hirb',               :group => [:development]
-gem 'wirble',             :group => [:development]
-gem 'interactive_editor', :group => [:development]
-gem 'utility_belt',       :group => [:development]
-
-# ============================================================================
 # Autotest, Webrat, Factory Girl, Rails3 Generators
 # ============================================================================
 attention 'Setting up Autotest, ZenTest, Database Cleaner, Webrat, Factory Girl, and Rails 3 Generators.'
-
-gem 'ZenTest',                            :group => [:development, :test]
-gem 'autotest',                           :group => [:development, :test]
-gem 'webrat',                             :group => [:test]
-gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:test]
-gem 'rails3-generators',                  :group => [:development]
-
 
 attention "Setting up .autotest file."
 file '.autotest', <<-EOF
@@ -342,11 +378,6 @@ git :commit => "-am 'Initial commit of a clean rails application.'"
 unless testunit
   attention 'Setting up Cucumber and Rspec.'
 
-  gem 'database_cleaner',   :group => [:development, :test]
-  gem 'cucumber-rails',     :group => [:test]
-  gem 'capybara',           :group => [:test]
-  gem 'rspec-rails',        :group => [:development, :test]
-
   after_bundler do 
     generate 'cucumber:install --capybara --skip-database --rspec'
     generate 'rspec:install'
@@ -368,7 +399,6 @@ end
 # ============================================================================
 attention 'Adding Simple Form'
 
-gem 'simple_form'
 after_bundler do
   generate 'simple_form:install'
 end
@@ -380,30 +410,15 @@ end
 # ============================================================================
 attention 'Setting up Sass, Compass and Fancy Buttons.'
 
-gem 'haml'
-gem 'compass'
-gem 'fancy-buttons'
-
 after_bundler do
   run 'compass init rails --css-dir=public/stylesheets --sass-dir=app/stylesheets --syntax sass'
 end
-
-# ============================================================================
-# Will Pagination, StateFlow, and Site Meta
-# ============================================================================
-attention 'Setting up Will Pagination, StateFlow, and Site Meta'
-
-gem 'will_paginate', '~> 3.0.pre2'
-gem 'stateflow'
-gem 'site_meta'
 
 
 # ============================================================================
 # Devise
 # ============================================================================
 attention "Setting up Devise."
-
-gem 'devise'
 
 after_bundler do
   generate 'devise:install'
@@ -457,12 +472,6 @@ end
 attention 'Setting up the config/initializers/generator.rb file.'
 template_engine = haml ? "g.template_engine      :haml" : "g.template_engine      :erb"
 
-if haml
-  gem "ruby_parser"
-  gem "hpricot"
-  gem "haml-rails"
-end
-
 initializer 'generators.rb', <<-RUBY
 Rails.application.config.generators do |g|
   g.stylesheets          false
@@ -491,10 +500,6 @@ gsub_file 'config/application.rb', /:password/, ':password, :password_confirmati
 if mongodb
   attention 'Setting up tools to use Mongoid for MongoDB.'
 
-  gem "bson",     "~> 1.2.2"
-  gem 'bson_ext', '~> 1.2.2'
-  gem 'mongoid',  '~> 2.0.0.rc.7'
-
   after_bundler do
     generate 'mongoid:config'
     generate 'mongoid:install'
@@ -520,11 +525,13 @@ end
   END
 end
 
+
 # ============================================================================
 # Run the after bundler tasks
 # ============================================================================
-attention 'Running Bundler and various tasks queued up for after bundler installs gems.'
-run 'bundler install'
+attention 'Running Bundler various tasks queued up for after bundler installs gems. Following the principle of "vendor everything".'
+run "bundle install --path vendor"
+run "bundle package"
 @run_after_bundler.each { |b| b.call unless b.nil? }
 
 # ============================================================================
