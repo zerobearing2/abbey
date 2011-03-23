@@ -1,9 +1,7 @@
 require 'pathname'
 require 'colored'
 
-def attention(text)
-  $stdout.puts(text.to_s.green.bold.rjust(10))
-end
+def attention(text); $stdout.puts(text.to_s.green.bold.rjust(10)); end
 
 @run_after_bundler = []
 def after_bundler(&block)
@@ -130,7 +128,7 @@ run 'mkdir -p db/seeds'
 run 'rm db/seeds.rb'
 file 'db/seeds.rb', <<-RUBY
 require 'colored'
-def announce(text); $stdout.puts(text.to_s.green.bold.rjust(10)); end
+def attention(text); $stdout.puts(text.to_s.green.bold.rjust(10)); end
 Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}
 RUBY
 
