@@ -71,6 +71,8 @@ attention "Updated the gitignore file."
 # ============================================================================
 # Adding Gems
 # ============================================================================
+attention "Adding gems to Gemfile."
+
 gem 'colored'
 
 # Add development Gems for when using Rails Console
@@ -80,15 +82,16 @@ gem 'interactive_editor',                 :group => [:development]
 gem 'utility_belt',                       :group => [:development]
 gem 'ZenTest',                            :group => [:development, :test]
 gem 'autotest',                           :group => [:development, :test]
-gem 'webrat',                             :group => [:test]
 gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:test]
 gem 'rails3-generators',                  :group => [:development]
+
 
 unless testunit
   attention "Setting up rspec and rspec related gems."
   gem 'database_cleaner',                 :group => [:development, :test]
   gem 'cucumber-rails',                   :group => [:test]
   gem 'capybara',                         :group => [:test]
+  gem 'launchy',                          :group => [:test]
   gem 'rspec-rails',                      :group => [:development, :test]
 end
 
@@ -100,7 +103,7 @@ gem 'simple_form'
 gem 'haml'
 gem 'compass'
 gem 'fancy-buttons'
-gem 'will_paginate', '~> 3.0.pre2'
+gem 'kaminari'
 gem 'stateflow'
 gem 'site_meta'
 gem 'devise'
