@@ -80,7 +80,7 @@ gem 'interactive_editor', '~> 0.0.7',                 :group => [:development]
 gem 'utility_belt',       '~> 1.1.0',                 :group => [:development]
 gem 'rails3-generators',  '~> 0.17.4',                :group => [:development]
 gem 'rocco',              '~> 0.6',                   :group => [:development]
-gem 'ZenTest',            '~> 0.4.0',                 :group => [:development, :test]
+gem 'ZenTest',            '~> 4.5.0',                 :group => [:development, :test]
 gem 'autotest',           '~> 4.4.6',                 :group => [:development, :test]
 gem 'database_cleaner',   '~> 0.6.6',                 :group => [:development, :test]
 gem 'factory_girl_rails', '~> 1.1.beta1',             :group => [:test]
@@ -119,6 +119,9 @@ if mongodb
   gem 'bson_ext',         '~> 1.2.4'
   gem 'mongoid',          '~> 2.0.0.rc.8'
 end
+
+run "bundle install --path vendor"
+run "bundle package"
 
 # ============================================================================
 # Adding the seed system
