@@ -19,10 +19,6 @@ testunit    = File.exists?(File.join(app, 'test/test_helper.rb'))
 mongodb     = yes?('Would you like to use MongoDB?') unless mysql
 haml        = yes?('Would you like to use haml?')
 
-if !mysql && !mongodb
-  gem 'sqlite3'
-end
-
 # ============================================================================
 # Remove unnecessary files
 # ============================================================================
@@ -71,54 +67,57 @@ attention "Updated the gitignore file."
 # ============================================================================
 attention "Adding gems to Gemfile."
 
-gem 'colored'
+if !mysql && !mongodb
+  gem 'sqlite3',          '~> 1.3.3'
+end
+
+gem 'colored',            '~> 1.2'
 
 # Add development Gems for when using Rails Console
-gem 'hirb',                               :group => [:development]
-gem 'wirble',                             :group => [:development]
-gem 'interactive_editor',                 :group => [:development]
-gem 'utility_belt',                       :group => [:development]
-gem 'ZenTest',                            :group => [:development, :test]
-gem 'autotest',                           :group => [:development, :test]
-gem 'factory_girl_rails', '~> 1.1.beta1', :group => [:test]
-gem 'rails3-generators',                  :group => [:development]
-
+gem 'hirb',               '~> 0.4.0',                 :group => [:development]
+gem 'wirble',             '~> 0.1.3',                 :group => [:development]
+gem 'interactive_editor', '~> 0.0.7',                 :group => [:development]
+gem 'utility_belt',       '~> 1.1.0',                 :group => [:development]
+gem 'rails3-generators',  '~> 0.17.4',                :group => [:development]
+gem 'rocco',              '~> 0.6',                   :group => [:development]
+gem 'ZenTest',            '~> 0.4.0',                 :group => [:development, :test]
+gem 'autotest',           '~> 4.4.6',                 :group => [:development, :test]
+gem 'database_cleaner',   '~> 0.6.6',                 :group => [:development, :test]
+gem 'factory_girl_rails', '~> 1.1.beta1',             :group => [:test]
 
 unless testunit
   attention "Setting up rspec and rspec related gems."
-  gem 'database_cleaner',                 :group => [:development, :test]
-  gem 'cucumber-rails',                   :group => [:test]
-  gem 'capybara',                         :group => [:test]
-  gem 'launchy',                          :group => [:test]
-  gem 'rspec-rails',                      :group => [:development, :test]
+  gem 'capybara',         '~> 0.4.1.2',               :group => [:test]
+  gem 'launchy',          '~> 0.4.0',                 :group => [:test]
+  gem 'rspec-rails',      '~> 2.5.0',                 :group => [:development, :test]
 end
 
 
 # Will Pagination, StateFlow, and Site Meta
 attention 'Setting up Will Pagination, StateFlow, and Site Meta'
 
-gem 'simple_form'
-gem 'haml'
-gem 'compass'
-gem 'fancy-buttons'
-gem 'kaminari'
-gem 'stateflow'
-gem 'site_meta'
-gem 'devise'
-gem 'devise_invitable'
+gem 'simple_form',        '~> 1.3.1'
+gem 'haml',               '~> 3.0.25'
+gem 'compass',            '~> 0.10.6'
+gem 'fancy-buttons',      '~> 1.0.6'
+gem 'kaminari',           '~> 0.10.4'
+gem 'stateflow',          '~> 0.4.1'
+gem 'site_meta',          '~> 1.0.0'
+gem 'devise',             '~> 1.1.8'
+gem 'devise_invitable',   '~> 0.3.6'
 
 if haml
   attention 'Setting up HAML'
-  gem "ruby_parser"
-  gem "hpricot"
-  gem "haml-rails"
+  gem "ruby_parser",      '~> 2.0.6'
+  gem "hpricot",          '~> 0.8.4'
+  gem "haml-rails",       '~> 0.3.4'
 end
 
 if mongodb
   attention 'Setting up MongoDB'
-  gem "bson",     "~> 1.2.2"
-  gem 'bson_ext', '~> 1.2.2'
-  gem 'mongoid',  '~> 2.0.0.rc.7'
+  gem "bson",             '~> 1.2.4'
+  gem 'bson_ext',         '~> 1.2.4'
+  gem 'mongoid',          '~> 2.0.0.rc.8'
 end
 
 # ============================================================================
@@ -184,6 +183,10 @@ module App
 
       def domain
         'Domain Name'
+      end
+      
+      def support_email
+        'support@email.com'
       end
 
       def version
@@ -311,6 +314,10 @@ namespace :project do
   task :domain => :environment do
     puts "Project's domain name: \#{App::Project.domain}"
   end
+  
+  task :support_email => :environment do
+    puts "Support Email: \#{App::Project.support_email}"
+  end
 end
 
 namespace :version do
@@ -380,7 +387,6 @@ unless testunit
   attention 'Setting up Cucumber and Rspec.'
 
   after_bundler do 
-    generate 'cucumber:install --capybara --skip-database --rspec'
     generate 'rspec:install'
   end
 
@@ -424,7 +430,6 @@ attention "Setting up Devise."
 after_bundler do
   generate 'devise:install'
   generate 'devise:views'
-  generate 'devise user'
 end
 
 attention 'Setting Devise Mailer in the config/environments/development.rb'
