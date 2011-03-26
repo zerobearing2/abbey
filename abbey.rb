@@ -491,7 +491,7 @@ RUBY
 
 attention 'Adding rspec to the generators.rb file.'
 unless testunit
-  inject_into_file 'config/initializers/generators.rb', :after => "g.template_engine      :erb\n" do
+  inject_into_file 'config/initializers/generators.rb', :after => "#{template_engine}\n" do
     'g.test_framework       :rspec, :fixture => true, :views => false'
   end
 end
@@ -515,7 +515,7 @@ if mongodb
   end
 
   inject_into_file "config/initializers/generators.rb", :after => "g.stylesheets          false\n" do
-    "    g.orm                  :mongoid\n"
+    "  g.orm                  :mongoid\n"
   end
 
 else
