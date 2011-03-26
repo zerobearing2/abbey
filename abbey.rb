@@ -480,6 +480,7 @@ end
 # ============================================================================
 attention 'Setting up the config/initializers/generator.rb file.'
 template_engine = haml ? "g.template_engine      :haml" : "g.template_engine      :erb"
+# rspec_generator = testunit ? "" : "g.test_framework       :rspec, :fixture => true, :views => false"
 
 initializer 'generators.rb', <<-RUBY
 Rails.application.config.generators do |g|
@@ -492,7 +493,7 @@ RUBY
 attention 'Adding rspec to the generators.rb file.'
 unless testunit
   inject_into_file 'config/initializers/generators.rb', :after => "#{template_engine}\n" do
-    'g.test_framework       :rspec, :fixture => true, :views => false'
+    "  g.test_framework       :rspec, :fixture => true, :views => false\n"
   end
 end
 
@@ -539,8 +540,6 @@ end
 # Run the after bundler tasks
 # ============================================================================
 attention 'Running Bundler various tasks queued up for after bundler installs gems. Following the principle of "vendor everything".'
-run "bundle install --path vendor"
-run "bundle package"
 @run_after_bundler.each { |b| b.call unless b.nil? }
 
 # ============================================================================
