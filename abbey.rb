@@ -480,22 +480,23 @@ end
 # ============================================================================
 attention 'Setting up the config/initializers/generator.rb file.'
 template_engine = haml ? "g.template_engine      :haml" : "g.template_engine      :erb"
-# rspec_generator = testunit ? "" : "g.test_framework       :rspec, :fixture => true, :views => false"
+rspec_generator = testunit ? "" : "g.test_framework       :rspec, :fixture => true, :views => false"
 
 initializer 'generators.rb', <<-RUBY
 Rails.application.config.generators do |g|
   g.stylesheets          false
   #{template_engine}
+  #{rspec_generator}
   g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'
 end
 RUBY
 
-attention 'Adding rspec to the generators.rb file.'
-unless testunit
-  inject_into_file 'config/initializers/generators.rb', :after => "#{template_engine}\n" do
-    "  g.test_framework       :rspec, :fixture => true, :views => false\n"
-  end
-end
+# attention 'Adding rspec to the generators.rb file.'
+# unless testunit
+#   inject_into_file 'config/initializers/generators.rb', :after => "#{template_engine}\n" do
+#     "  g.test_framework       :rspec, :fixture => true, :views => false\n"
+#   end
+# end
 
 # ============================================================================
 # Prevent Logging of Passwords
