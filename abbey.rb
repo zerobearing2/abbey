@@ -1,7 +1,7 @@
 require 'pathname'
 require 'colored'
 
-def attention(text); $stdout.puts(text.to_s.green.bold.rjust(10)); end
+def attention(text); $stdout.puts(text.to_s.green.bold.ljust(10)); end
 
 @run_after_bundler = []
 def after_bundler(&block)
@@ -36,6 +36,8 @@ run "mkdir -p app/views/shared"
 attention "Recreated the readme file using markdown."
 attention "Created app/views/shared directory"
 
+attention "Updated the gitignore file."
+
 # ============================================================================
 # Setup the gitignore file
 # ============================================================================
@@ -60,8 +62,6 @@ coverage/*
 vendor/ruby
 FILE
 
-attention "Updated the gitignore file."
-
 # ============================================================================
 # Adding Gems
 # ============================================================================
@@ -83,9 +83,12 @@ gem 'rocco',              '~> 0.6',                   :group => [:development]
 gem 'ZenTest',            '~> 4.5.0',                 :group => [:development, :test]
 gem 'autotest',           '~> 4.4.6',                 :group => [:development, :test]
 gem 'database_cleaner',   '~> 0.6.6',                 :group => [:development, :test]
-gem 'factory_girl_rails', '~> 1.1.beta1',             :group => [:test]
+gem 'factory_girl',       '~> 2.0.0.beta2',           :group => [:test]
 
-unless testunit
+if testunit
+  attention "Adding turn gem for nice test/unit output"
+  gem "turn",             '~> 0.8.2',                 :group => [:test]
+else
   attention "Setting up rspec and rspec related gems."
   gem 'capybara',         '~> 0.4.1.2',               :group => [:test]
   gem 'launchy',          '~> 0.4.0',                 :group => [:test]
@@ -117,7 +120,7 @@ if mongodb
   attention 'Setting up MongoDB'
   gem "bson",             '~> 1.2.4'
   gem 'bson_ext',         '~> 1.2.4'
-  gem 'mongoid',          '~> 2.0.0.rc.8'
+  gem 'mongoid',          '~> 2.0.0'
 end
 
 run "bundle install --path vendor"
@@ -130,7 +133,7 @@ run 'mkdir -p db/seeds'
 run 'rm db/seeds.rb'
 file 'db/seeds.rb', <<-RUBY
 require 'colored'
-def attention(text); $stdout.puts(text.to_s.green.bold.rjust(10)); end
+def attention(text); $stdout.puts(text.to_s.green.bold.ljust(10)); end
 Dir[Rails.root.join("db/seeds/**/*.rb")].each {|f| require f}
 RUBY
 
@@ -140,23 +143,24 @@ attention "The seed system is all setup."
 # Install jQuery
 # ============================================================================
 if !prototype
+  attention "Added jquery, jquery ui, and rails-jquery to the project."
+  attention "Updated config/application to autoload jquery, jquery ui, and rails-jquery."
   inside "public/javascripts" do
     get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js",      "rails.js"
     get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js",      "jquery.js"
     get "http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js", "jquery_ui.js"
-    attention "Added jquery, jquery ui, and rails-jquery to the project."
   end
   gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
-  attention "Updated config/application to autoload jquery, jquery ui, and rails-jquery."
 end
 
 
 # ============================================================================
 # Install Modernizr
 # ============================================================================
+attention "Added modernizr and timeago to the project."
 inside "public/javascripts" do
   get "https://github.com/Modernizr/Modernizr/raw/master/modernizr.js", "modernizr.js"
-  attention "Added modernizr to the project."
+  get "http://timeago.yarp.com/jquery.timeago.js", "timeago.js"
 end
 
 
@@ -169,10 +173,7 @@ config.autoload_paths += %W(\#{config.root}/lib)
 RUBY
 end
 
-attention "Updated the config.autoload_paths to include the /lib directory."
-
 file 'config/build.version', '0.0.1'
-attention "Created config/build.version with version 0.0.1 for application version control."
 
 file 'lib/app.rb', <<-CODE
 require 'colored'
@@ -298,8 +299,6 @@ module App
 end
 CODE
 
-attention "Added lib/app.rb for project name, domain and versioning control."
-
 # ============================================================================
 # Apply the rake tasks associated with App::Project
 # ============================================================================
@@ -360,14 +359,14 @@ namespace :version do
   end
 end
 CODE
-
+attention "Updated the config.autoload_paths to include the /lib directory."
+attention "Created config/build.version with version 0.0.1 for application version control."
+attention "Added lib/app.rb for project name, domain and versioning control."
 attention "Added rake tasks to easily use the app.rb project management script."
 
 # ============================================================================
 # Autotest, Webrat, Factory Girl, Rails3 Generators
 # ============================================================================
-attention 'Setting up Autotest, ZenTest, Database Cleaner, Webrat, Factory Girl, and Rails 3 Generators.'
-
 attention "Setting up .autotest file."
 file '.autotest', <<-EOF
 require 'autotest/fsevent'
@@ -480,23 +479,21 @@ end
 # ============================================================================
 attention 'Setting up the config/initializers/generator.rb file.'
 template_engine = haml ? "g.template_engine      :haml" : "g.template_engine      :erb"
-rspec_generator = testunit ? "" : "g.test_framework       :rspec, :fixture => true, :views => false"
+rspec_generator = testunit ? "g.test_framework       :test_unit, :fixture => false, :views => false" : "g.test_framework       :rspec, :fixture => false, :views => false"
+
+fixture_replacement = testunit ? "g.fixture_replacement  :factory_girl,  :dir => 'test/factories'"  : "g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'"
+
+orm = mongodb ? "g.orm                  :mongoid" : ""
 
 initializer 'generators.rb', <<-RUBY
 Rails.application.config.generators do |g|
   g.stylesheets          false
+  #{orm}
   #{template_engine}
   #{rspec_generator}
-  g.fixture_replacement  :factory_girl,  :dir => 'spec/factories'
+  #{fixture_replacement}
 end
 RUBY
-
-# attention 'Adding rspec to the generators.rb file.'
-# unless testunit
-#   inject_into_file 'config/initializers/generators.rb', :after => "#{template_engine}\n" do
-#     "  g.test_framework       :rspec, :fixture => true, :views => false\n"
-#   end
-# end
 
 # ============================================================================
 # Prevent Logging of Passwords
@@ -509,17 +506,13 @@ gsub_file 'config/application.rb', /:password/, ':password, :password_confirmati
 # MongoDB Setup, if requested
 # ============================================================================
 if mongodb
-  attention 'Setting up tools to use Mongoid for MongoDB.'
+  attention 'Setting up tools to use MongoID for MongoDB.'
 
   after_bundler do
     generate 'mongoid:config'
     generate 'mongoid:install'
   end
-
-  inject_into_file "config/initializers/generators.rb", :after => "g.stylesheets          false\n" do
-    "  g.orm                  :mongoid\n"
-  end
-
+  
 else
   attention 'Setting up rake db:reseed task'
   file "lib/tasks/reseed.rake", <<-END
@@ -530,7 +523,6 @@ namespace :db do
     Rake::Task['db:create'].invoke
     Rake::Task['db:migrate'].invoke
     Rake::Task['db:seed'].invoke
-    Rake::Task['db:test:clone'].invoke
   end
 end
   END
