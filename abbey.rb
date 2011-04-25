@@ -83,7 +83,6 @@ gem 'rocco',              '~> 0.6',                   :group => [:development]
 gem 'ZenTest',            '~> 4.5.0',                 :group => [:development, :test]
 gem 'autotest',           '~> 4.4.6',                 :group => [:development, :test]
 gem 'database_cleaner',   '~> 0.6.6',                 :group => [:development, :test]
-gem 'factory_girl',       '~> 2.0.0.beta2',           :group => [:test]
 
 if testunit
   attention "Adding turn gem for nice test/unit output"
@@ -95,6 +94,7 @@ else
   gem 'rspec-rails',      '~> 2.5.0',                 :group => [:development, :test]
 end
 
+gem 'factory_girl_rails', '~> 1.1.beta1',             :group => [:test]
 
 # Will Pagination, StateFlow, and Site Meta
 attention 'Setting up Will Pagination, StateFlow, and Site Meta'
@@ -118,8 +118,8 @@ end
 
 if mongodb
   attention 'Setting up MongoDB'
-  gem "bson",             '~> 1.2.4'
-  gem 'bson_ext',         '~> 1.2.4'
+  gem "bson",             '~> 1.3.0'
+  gem 'bson_ext',         '~> 1.3.0'
   gem 'mongoid',          '~> 2.0.0'
 end
 
