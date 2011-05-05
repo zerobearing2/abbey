@@ -12,7 +12,6 @@ temple      = Pathname.new(File.expand_path(File.dirname(__FILE__)))
 app         = Pathname.new(File.expand_path(Dir.pwd))
 
 mysql       = File.exists?(File.join(app, 'config/database.yml'))
-prototype   = File.exists?(File.join(app, 'public/javascripts/prototype.js'))
 testunit    = File.exists?(File.join(app, 'test/test_helper.rb'))
 
 # Ask some questions
@@ -22,7 +21,7 @@ haml        = yes?('Would you like to use haml?')
 # ============================================================================
 # Remove unnecessary files
 # ============================================================================
-files = ['README', 'public/index.html', 'public/favicon.ico', 'public/images/rails.png']
+files = ['README', 'public/index.html', 'public/favicon.ico', 'app/assets/images/rails.png']
 files.each { |f| run "rm #{f}" }
 attention "Removed unnecessary files."
 
@@ -32,6 +31,8 @@ attention "Removed unnecessary files."
 run "cp config/database.yml config/database.yml.example" if mysql
 run "touch Readme.mkd"
 run "mkdir -p app/views/shared"
+run "mkdir -p app/assets/stylesheets/modules"
+run "mkdir -p app/assets/stylesheets/partials"
 
 attention "Recreated the readme file using markdown."
 attention "Created app/views/shared directory"
@@ -71,8 +72,6 @@ if !mysql && !mongodb
   gem 'sqlite3',          '~> 1.3.3'
 end
 
-gem 'colored',            '~> 1.2'
-
 # Add development Gems for when using Rails Console
 gem 'hirb',               '~> 0.4.0',                 :group => [:development]
 gem 'wirble',             '~> 0.1.3',                 :group => [:development]
@@ -82,16 +81,13 @@ gem 'rails3-generators',  '~> 0.17.4',                :group => [:development]
 gem 'rocco',              '~> 0.6',                   :group => [:development]
 gem 'ZenTest',            '~> 4.5.0',                 :group => [:development, :test]
 gem 'autotest',           '~> 4.4.6',                 :group => [:development, :test]
-gem 'database_cleaner',   '~> 0.6.6',                 :group => [:development, :test]
+gem 'database_cleaner',   '~> 0.6.7',                 :group => [:development, :test]
 
-if testunit
-  attention "Adding turn gem for nice test/unit output"
-  gem "turn",             '~> 0.8.2',                 :group => [:test]
-else
-  attention "Setting up rspec and rspec related gems."
+if !testunit
+  attention "Setting up rspec launchy, and rspec-rails related gems."
+  gem 'rspec-rails',      '~> 2.5.0',                 :group => [:development, :test]
   gem 'capybara',         '~> 0.4.1.2',               :group => [:test]
   gem 'launchy',          '~> 0.4.0',                 :group => [:test]
-  gem 'rspec-rails',      '~> 2.5.0',                 :group => [:development, :test]
 end
 
 gem 'factory_girl_rails', '~> 1.1.beta1',             :group => [:test]
@@ -99,15 +95,16 @@ gem 'factory_girl_rails', '~> 1.1.beta1',             :group => [:test]
 # Will Pagination, StateFlow, and Site Meta
 attention 'Setting up Will Pagination, StateFlow, and Site Meta'
 
+gem 'colored',            '~> 1.2'
 gem 'simple_form',        '~> 1.3.1'
-gem 'haml',               '~> 3.0.25'
-gem 'compass',            '~> 0.10.6'
-gem 'fancy-buttons',      '~> 1.0.6'
-gem 'kaminari',           '~> 0.10.4'
-gem 'stateflow',          '~> 0.4.1'
+gem 'compass',            '~> 0.11.1'
+gem 'fancy-buttons',      '~> 1.1.1'
+gem 'kaminari',           '~> 0.12.4'
+gem 'stateflow',          '~> 0.4.2'
 gem 'site_meta',          '~> 1.0.0'
-gem 'devise',             '~> 1.1.8'
-gem 'devise_invitable',   '~> 0.3.6'
+gem 'devise',             '~> 1.3.4'
+# gem 'devise_invitable',   '~> 0.4.2' # TODO: Not Rails 3.1 ready
+
 
 if haml
   attention 'Setting up HAML'
@@ -120,7 +117,7 @@ if mongodb
   attention 'Setting up MongoDB'
   gem "bson",             '~> 1.3.0'
   gem 'bson_ext',         '~> 1.3.0'
-  gem 'mongoid',          '~> 2.0.0'
+  gem 'mongoid',          '~> 2.0.1'
 end
 
 run "bundle install --path vendor"
@@ -142,23 +139,22 @@ attention "The seed system is all setup."
 # ============================================================================
 # Install jQuery
 # ============================================================================
-if !prototype
-  attention "Added jquery, jquery ui, and rails-jquery to the project."
-  attention "Updated config/application to autoload jquery, jquery ui, and rails-jquery."
-  inside "public/javascripts" do
-    get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js",      "rails.js"
-    get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js",      "jquery.js"
-    get "http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js", "jquery_ui.js"
-  end
-  gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
+attention "Added jquery, jquery ui, and rails-jquery to the project."
+attention "Updated config/application to autoload jquery, jquery ui, and rails-jquery."
+inside "app/assets/javascripts" do
+  get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js",      "rails.js"
+  get "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js",      "jquery.js"
+  get "http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js", "jquery_ui.js"
 end
+gsub_file 'config/application.rb', /%w\(\)/, '%w(jquery jquery_ui rails)'
+
 
 
 # ============================================================================
 # Install Modernizr
 # ============================================================================
 attention "Added modernizr and timeago to the project."
-inside "public/javascripts" do
+inside "app/assets/javascripts" do
   get "https://github.com/Modernizr/Modernizr/raw/master/modernizr.js", "modernizr.js"
   get "http://timeago.yarp.com/jquery.timeago.js", "timeago.js"
 end
@@ -386,7 +382,7 @@ git :commit => "-am 'Initial commit of a clean rails application.'"
 # Rspec && Cucumber
 # ============================================================================
 unless testunit
-  attention 'Setting up Cucumber and Rspec.'
+  attention 'Setting up Rspec.'
 
   after_bundler do 
     generate 'rspec:install'
@@ -417,11 +413,11 @@ end
 # ============================================================================
 # Sass, Compass, Fancy Buttons
 # ============================================================================
-attention 'Setting up Sass, Compass and Fancy Buttons.'
+attention 'Setting up Compass.'
 
-after_bundler do
-  run 'compass init rails --css-dir=public/stylesheets --sass-dir=app/stylesheets --syntax sass'
-end
+# after_bundler do
+#   run 'compass init rails --css-dir=public/stylesheets --sass-dir=app/stylesheets --syntax sass'
+# end
 
 
 # ============================================================================
